@@ -45,7 +45,7 @@ const extractDocState = (doc) => {
 }
 
 
-module.exports = function sendIfUpdated(req, res, next) {
+const sendIfUpdated = (req, res, next) => {
     const { dataName, data } = res.locals.searchResult;
     if (!data) throw new Error("sendIfUpdated requires res.locals.searchResult to be set.");
 
@@ -69,3 +69,5 @@ module.exports = function sendIfUpdated(req, res, next) {
     res.setHeader("ETag", etag);
     return res.status(200).json({ result: true, [dataName] : data });
 }
+
+module.exports={ sendIfUpdated }
