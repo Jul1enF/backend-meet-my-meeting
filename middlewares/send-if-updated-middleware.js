@@ -11,6 +11,7 @@
 
 // Doesn't work if the datas were search with a .select() that doesn't include the _id and the udpatedAt !!!!
 
+// If datas are not store persistantly in the front after this response or can be lost, send a if-none-match erased for the first fetch (http cache could have the same etag)
 
 const crypto = require("crypto");
 
@@ -59,15 +60,19 @@ const sendIfUpdated = (req, res, next) => {
     }
 
     // Hash to not have an infinite ETag
-    const etag = 'W/"' + crypto.createHash("sha1").update(etagBase).digest("hex") + '"';
-
+    const etagBaseSha1String = crypto.createHash("sha1").update(etagBase).digest("hex")
     const ifNoneMatch = req.headers["if-none-match"];
-    if (ifNoneMatch && ifNoneMatch === etag) {
-        return res.status(304).end();
-    }
 
-    res.setHeader("ETag", etag);
-    return res.status(200).json({ result: true, [dataName] : data });
+    if (ifNoneMatch && ifNoneMatch.includes(etagBaseSha1String)) {
+        const etag = 'W/"' + etagBaseSha1String + "dataNotModified" + '"';
+        res.setHeader("ETag", etag);
+        return res.status(200).json({ result: true, notModified: true })
+    }
+    else {
+        const etag = 'W/"' + etagBaseSha1String + '"';
+        res.setHeader("ETag", etag);
+        return res.status(200).json({ result: true, [dataName]: data });
+    }
 }
 
-module.exports={ sendIfUpdated }
+module.exports = { sendIfUpdated }

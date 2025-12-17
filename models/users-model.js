@@ -12,7 +12,7 @@ const userSchema = mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: String,
     token: String,
-    role: { type: String, enum: ['admin', 'coworker', 'client'], default: 'client' },
+    role: { type: String, enum: ['owner', 'admin', 'employee', 'client'], default: 'client' },
     is_available: { type: Boolean, default: false },
     working_hours: { type: Object, default: null },
     absences: [absencesSchema],

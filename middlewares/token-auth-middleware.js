@@ -30,6 +30,28 @@ const userTokenAuth = async (req, res, next) => {
 };
 
 
+const ownerTokenAuth = async (req, res, next) => {
+  try {
+    const { authorization } = req.headers;
+
+    const jwtToken = authorization.slice(7, authorization.length);
+
+    const { token } = jwt.verify(jwtToken, jwtTokenKey);
+
+    req.user = await User.findOne({ token });
+
+    // Check that the user token has been successfuly found in the db with the appropriate role
+    if (!req.user || req.user?.role !== "owner") {
+      return res.json(errorResponse);
+    }
+
+    return next();
+  } catch (err) {
+    console.log("User Token Auth Error :", err);
+    return res.json(errorResponse);
+  }
+};
+
 const adminTokenAuth = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
@@ -41,7 +63,7 @@ const adminTokenAuth = async (req, res, next) => {
     req.user = await User.findOne({ token });
 
     // Check that the user token has been successfuly found in the db with the appropriate role
-    if (!req.user || req.user?.role !== "admin") {
+    if (!req.user || (req.user?.role !== 'owner' && req.user?.role !== 'admin' )) {
       return res.json(errorResponse);
     }
 
@@ -52,7 +74,8 @@ const adminTokenAuth = async (req, res, next) => {
   }
 };
 
-const coworkerTokenAuth = async (req, res, next) => {
+
+const employeeTokenAuth = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
 
@@ -74,4 +97,4 @@ const coworkerTokenAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { userTokenAuth, adminTokenAuth, coworkerTokenAuth };
+module.exports = { userTokenAuth, ownerTokenAuth, adminTokenAuth, employeeTokenAuth };
