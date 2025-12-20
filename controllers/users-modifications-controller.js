@@ -15,7 +15,7 @@ const updateUser = async (req, res, next) => {
     // Password comparison if an old one is provided
 
     if (oldPassword && !bcrypt.compareSync(oldPassword, user.password)) {
-        res.json({ result: false, error: "Ancien mot de passe incorrect !" })
+        res.json({ result: false, errorText: "Ancien mot de passe incorrect !" })
         return
     }
 

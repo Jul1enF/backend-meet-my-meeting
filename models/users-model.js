@@ -9,11 +9,10 @@ const absencesSchema = mongoose.Schema({
 const userSchema = mongoose.Schema({
     first_name: String,
     last_name: String,
-    email: { type: String, required: true, unique: true },
+    email: { type: String, unique: true },
     password: String,
     token: String,
     role: { type: String, enum: ['owner', 'admin', 'employee', 'client'], default: 'client' },
-    is_available: { type: Boolean, default: false },
     working_hours: { type: Object, default: null },
     absences: [absencesSchema],
     appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'appointments' }],

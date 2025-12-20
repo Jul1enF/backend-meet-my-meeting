@@ -9,6 +9,6 @@ module.exports = async (req, res, next) => {
         }
         next()
     } catch (err) {
-        res.status(500).json({ result: false, error: "Erreur : Problème de connexion" })
+        res.status(500).json({ result: false, errorText: "Erreur : Problème de connexion" })
     }
 }

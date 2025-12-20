@@ -3,7 +3,7 @@
 
 // const users = await User.find()
 // if (!users.length){
-//     return res.json({result : false, error : "Aucun utilisateur trouvé en bdd !"})
+//     return res.json({result : false, errorText: "Aucun utilisateur trouvé en bdd !"})
 // }else{
 //     res.locals.searchResult = { dataName : "users", data : users}
 //     next(); 

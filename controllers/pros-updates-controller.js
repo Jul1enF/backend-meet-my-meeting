@@ -1,6 +1,5 @@
 const User = require("../models/users-model")
 
-
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
 
@@ -12,4 +11,28 @@ const getAllUsers = async (req, res, next) => {
 }
 
 
-module.exports = { getAllUsers }
+// UPDATE THE ROLE AND/OR THE SCHEDULE OF A USER
+
+const updateUser = async (req, res, next) => {
+    const { _id, userToSave } = req.body
+    
+    const userSaved = await User.findByIdAndUpdate(
+      _id,
+      { $set: userToSave},
+      {
+        new: true,
+        runValidators: true
+      }
+    ).select("-password -token");
+
+     if (!userSaved) { 
+        return res.status(404).json({ result : false, errorText: "Utilisateur non trouvé en base de donnée !" })
+    }
+    else{
+        return res.json({result : true, userSaved, successText : "Modifications enregistrées avec succès !"})
+    }
+
+}
+
+
+module.exports = { getAllUsers, updateUser }

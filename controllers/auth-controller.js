@@ -15,7 +15,7 @@ const signup = async (req, res, next) => {
     if (data) {
         res.json({
             result: false,
-            error: 'Utilisateur déjà enregistré !'
+            errorText: 'Utilisateur déjà enregistré !'
         })
         return
     }
@@ -59,7 +59,7 @@ const signin = async (req, res, next) => {
     const userData = await User.findOne({ email })
 
     if (!userData || !bcrypt.compareSync(password, userData.password)) {
-        res.json({ result: false, error: "Email ou mot de passe incorrect !" })
+        res.json({ result: false, errorText: "Email ou mot de passe incorrect !" })
         return
     }
     else {

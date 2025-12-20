@@ -4,7 +4,8 @@ const User = require("../models/users-model");
 
 const errorResponse = {
   result: false,
-  error: "Session invalide ou expirée. Merci de réessayer après vous être reconnecté.",
+  errorText: "Session invalide ou expirée. Merci de réessayer après vous être reconnecté.",
+  sessionExpired : true,
 }
 
 const userTokenAuth = async (req, res, next) => {

@@ -4,7 +4,7 @@ const errorHandler = (controller) => {
             await controller(req, res, next);
         } catch (err) {
             console.log("Controller error :", err)
-            res.json({result : false, error : "Problème de connexion, merci de réessayer ultérieurement.", err})
+            res.json({result : false, errorText: "Problème de connexion, merci de réessayer ultérieurement.", err})
         }
     }
 }
