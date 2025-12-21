@@ -1,4 +1,4 @@
-const User = require('../models/users-model')
+const User = require('../models/users.model')
 
 const bcrypt = require('bcrypt')
 const uid2 = require('uid2')

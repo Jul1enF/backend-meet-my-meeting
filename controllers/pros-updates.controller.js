@@ -1,4 +1,5 @@
-const User = require("../models/users-model")
+const User = require("../models/users.model")
+const EventType = require("../models/event-types.model")
 
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
@@ -35,4 +36,11 @@ const updateUser = async (req, res, next) => {
 }
 
 
-module.exports = { getAllUsers, updateUser }
+// GET THE LIST OF ALL THE APPOINTMENT TYPES
+const getAppointmentsTypes = async (req, res, next) => {
+  const appointmentsTypes = EventType.find({category : "appointment"})
+  res.json({result : true, appointmentsTypes})
+}
+
+
+module.exports = { getAllUsers, updateUser, getAppointmentsTypes }

@@ -1,11 +1,5 @@
 const mongoose = require('mongoose');
 
-const absencesSchema = mongoose.Schema({
-    start: Date,
-    end: Date,
-    reason: String,
-}, { _id: false })
-
 const userSchema = mongoose.Schema({
     first_name: String,
     last_name: String,
@@ -13,9 +7,8 @@ const userSchema = mongoose.Schema({
     password: String,
     token: String,
     role: { type: String, enum: ['owner', 'admin', 'employee', 'client'], default: 'client' },
-    working_hours: { type: Object, default: null },
-    absences: [absencesSchema],
-    appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'appointments' }],
+    schedule: { type: Object, default: null },
+    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'events' }],
 },
     { timestamps: true })
 

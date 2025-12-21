@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.disable('etag');
 
 // DB connection
-const dbConnection = require('./middlewares/db-connection-middleware')
+const dbConnection = require('./middlewares/db-connection.middleware')
 app.use(dbConnection)
 
 // Check of the final status send
