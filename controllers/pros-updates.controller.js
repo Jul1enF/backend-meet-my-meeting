@@ -4,43 +4,84 @@ const EventType = require("../models/event-types.model")
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
 
-    const allUsers = await User.find().select('-password -token')
-    allUsers.sort((a, b)=> new Date(b.createdAt) - new Date(a.createdAt))
+  const allUsers = await User.find().select('-password -token')
+  allUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-    res.locals.searchResult = { dataName : "allUsers", data : allUsers}
-    next();
+  res.locals.searchResult = { dataName: "allUsers", data: allUsers }
+  next();
 }
 
 
 // UPDATE THE ROLE AND/OR THE SCHEDULE OF A USER
 
 const updateUser = async (req, res, next) => {
-    const { _id, userToSave } = req.body
-    
-    const userSaved = await User.findByIdAndUpdate(
-      _id,
-      { $set: userToSave},
-      {
-        new: true,
-        runValidators: true
-      }
-    ).select("-password -token");
+  const { _id, userToSave } = req.body
 
-     if (!userSaved) { 
-        return res.status(404).json({ result : false, errorText: "Utilisateur non trouvé en base de donnée !" })
+  const userSaved = await User.findByIdAndUpdate(
+    _id,
+    { $set: userToSave },
+    {
+      new: true,
+      runValidators: true
     }
-    else{
-        return res.json({result : true, userSaved, successText : "Modifications enregistrées avec succès !"})
-    }
+  ).select("-password -token");
+
+  if (!userSaved) {
+    return res.status(404).json({ result: false, errorText: "Utilisateur non trouvé en base de donnée !" })
+  }
+  else {
+    return res.json({ result: true, userSaved, successText: "Modifications enregistrées avec succès !" })
+  }
 
 }
 
 
 // GET THE LIST OF ALL THE APPOINTMENT TYPES
 const getAppointmentsTypes = async (req, res, next) => {
-  const appointmentsTypes = EventType.find({category : "appointment"})
-  res.json({result : true, appointmentsTypes})
+  const appointmentsTypes = await EventType.find({ category: "appointment" })
+
+  res.json({ result: true, appointmentsTypes })
+}
+
+// CREATE OR UPDATE AN APPOINTMENT
+const appointmentTypesModification = async (req, res, next) => {
+  const { eventTypeToSave, newEventType, _id } = req.body
+  let appointmentTypeSaved
+
+  // Create
+  if (!newEventType) {
+    appointmentTypeSaved = await EventType.findByIdAndUpdate(
+      _id,
+      { $set: eventTypeToSave },
+      {
+        new: true,
+        runValidators: true
+      }
+    )
+  }
+  else {
+    const newEventType = new EventType(eventTypeToSave)
+    appointmentTypeSaved = await newEventType.save()
+  }
+
+  if (!appointmentTypeSaved) {
+    return res.status(404).json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée." })
+  }
+  else {
+    return res.json({ result: true, appointmentTypeSaved, successText: `${newEventType ? "Modèle enregistré" : "Modifications enregistrées"} avec succès !` })
+  }
 }
 
 
-module.exports = { getAllUsers, updateUser, getAppointmentsTypes }
+// DELETE AN APPOINTMENT TYPE
+const deleteAppointmentType = async (req, res, next) => {
+  const { _id } = req.params
+  const result = await EventType.deleteOne({_id})
+  if (!result.deletedCount === 1){
+    return res.status(404).json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée." })
+  }
+  else return res.json({ result : true })
+}
+
+
+module.exports = { getAllUsers, updateUser, getAppointmentsTypes, appointmentTypesModification, deleteAppointmentType }

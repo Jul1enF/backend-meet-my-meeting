@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 const jwtTokenKey = process.env.JWT_TOKEN_KEY;
-const User = require("../models/users-model");
+const User = require("../models/users.model");
 
 const errorResponse = {
   result: false,
-  errorText: "Session invalide ou expirée. Merci de réessayer après vous être reconnecté.",
+  errorText: "Session invalide ou expirée. Merci de réessayer après vous être reconnecté(e).",
   sessionExpired : true,
 }
 
