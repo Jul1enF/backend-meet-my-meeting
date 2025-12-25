@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// IN THE SCHEDULE OBJECT : 0 = MONDAY
+
 const userSchema = mongoose.Schema({
     first_name: String,
     last_name: String,

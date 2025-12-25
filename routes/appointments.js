@@ -7,7 +7,7 @@ const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
 const { appointmentInformations } = require("../controllers/appointments.controller")
 
-// GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
+// GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
 router.get("/appointment-informations", errorHandler(appointmentInformations), sendIfUpdated)
 
 module.exports = router;

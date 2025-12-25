@@ -7,17 +7,18 @@ const Event = require("../models/events.model")
 const EventType = require("../models/event-types.model")
 const User = require("../models/users.model")
 
-const moment = require('moment')
+const { DateTime } = require('luxon')
 
 
-
+// GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
 const appointmentInformations = async (req, res, next) => {
   const employees = await User.find({ role: { $ne: "client" } }).select('-password -token -email -last_name')
   const appointmentTypes = await EventType.find({ category: "appointment" })
-
-  console.log("MAX DATE :", moment("23:59", "HH:mm").add(maxFuturDays, 'day'))
-
-  const events = await Event.find({ start: { $lt: moment("23:59", "HH:mm").add(maxFuturDays, 'day') }, end: { $gt: moment() } }).populate("event_type")
+  
+  const now = DateTime.utc()
+  const maxDate = now.plus({days : maxFuturDays}).endOf("day").toJSDate()
+  
+  const events = await Event.find({ start: { $lt: maxDate }, end: { $gt: new Date() } }).populate("event_type")
 
   const informations = { employees, appointmentTypes, events }
 
