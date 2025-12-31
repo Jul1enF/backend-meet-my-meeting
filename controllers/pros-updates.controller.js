@@ -1,5 +1,5 @@
 const User = require("../models/users.model")
-const EventType = require("../models/event-types.model")
+const AppointmentType = require("../models/appointment-types.model")
 
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
@@ -38,21 +38,21 @@ const updateUser = async (req, res, next) => {
 
 // GET THE LIST OF ALL THE APPOINTMENT TYPES
 const getAppointmentsTypes = async (req, res, next) => {
-  const appointmentsTypes = await EventType.find({ category: "appointment" })
+  const appointmentsTypes = await AppointmentType.find()
 
   res.json({ result: true, appointmentsTypes })
 }
 
 // CREATE OR UPDATE AN APPOINTMENT
 const appointmentTypesModification = async (req, res, next) => {
-  const { eventTypeToSave, newEventType, _id } = req.body
+  const { appointmentTypeToSave, newAppointmentType, _id } = req.body
   let appointmentTypeSaved
 
   // Create
-  if (!newEventType) {
-    appointmentTypeSaved = await EventType.findByIdAndUpdate(
+  if (!newAppointmentType) {
+    appointmentTypeSaved = await AppointmentType.findByIdAndUpdate(
       _id,
-      { $set: eventTypeToSave },
+      { $set: appointmentTypeToSave },
       {
         new: true,
         runValidators: true
@@ -60,15 +60,15 @@ const appointmentTypesModification = async (req, res, next) => {
     )
   }
   else {
-    const newEventType = new EventType(eventTypeToSave)
-    appointmentTypeSaved = await newEventType.save()
+    const newAppointmentType = new AppointmentType(appointmentTypeToSave)
+    appointmentTypeSaved = await newAppointmentType.save()
   }
 
   if (!appointmentTypeSaved) {
     return res.status(404).json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée." })
   }
   else {
-    return res.json({ result: true, appointmentTypeSaved, successText: `${newEventType ? "Modèle enregistré" : "Modifications enregistrées"} avec succès !` })
+    return res.json({ result: true, appointmentTypeSaved, successText: `${newAppointmentType ? "Modèle enregistré" : "Modifications enregistrées"} avec succès !` })
   }
 }
 
@@ -76,7 +76,7 @@ const appointmentTypesModification = async (req, res, next) => {
 // DELETE AN APPOINTMENT TYPE
 const deleteAppointmentType = async (req, res, next) => {
   const { _id } = req.params
-  const result = await EventType.deleteOne({_id})
+  const result = await AppointmentType.deleteOne({_id})
   if (!result.deletedCount === 1){
     return res.status(404).json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée." })
   }
