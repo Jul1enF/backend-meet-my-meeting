@@ -2,6 +2,8 @@ const defaultExpirationDate = 1000 * 60 * 60 * 24 * 30 * 2; // 2 months
 const expiresAt = new Date(Date.now() + defaultExpirationDate);
 const appointmentGapMs = 1000 * 60 * 15 // 15 minutes
 const maxFuturDays = 15
+const sortFreeEmployees = null
+const rolesPriorities = { owner: 1, admin: 2, employee: 3 }
 
 const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
@@ -14,7 +16,7 @@ const { DateTime } = require('luxon')
 const appointmentInformations = async (req, res, next) => {
 
   // Employees and appointment types
-  const employees = await User.find({ role: { $ne: "client" } }).sort({ createdAt: 1 }).select('-password -token -email -last_name')
+  const employees = await User.find({ role: { $ne: "client" } }).sort({ createdAt: 1 }).select('-password -token -email -last_name -events')
   const appointmentTypes = await AppointmentType.find()
 
   // Events
@@ -40,7 +42,7 @@ const appointmentInformations = async (req, res, next) => {
     else events.push(e)
   })
 
-  const informations = { employees, appointmentTypes, events, closures, absences, appointmentGapMs }
+  const informations = { employees, appointmentTypes, events, closures, absences, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
 
   res.locals.searchResult = { dataName: "informations", data: informations }
   next();

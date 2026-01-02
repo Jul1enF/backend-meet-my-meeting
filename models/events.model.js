@@ -13,6 +13,7 @@ const eventSchema = mongoose.Schema({
 
     description: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
 
     expiresAt: Date,
 },
