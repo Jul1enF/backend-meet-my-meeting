@@ -10,6 +10,7 @@ const userSchema = mongoose.Schema({
     token: String,
     role: { type: String, enum: ['owner', 'admin', 'employee', 'client'], default: 'client' },
     schedule: { type: Object, default: null },
+    contract_end : { type : Date, default : null},
     events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'events' }],
 },
     { timestamps: true })
