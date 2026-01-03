@@ -43,7 +43,7 @@ const signup = async (req, res, next) => {
             last_name,
             email,
             role : data.role,
-            appointments: data.appointments,
+            events: data.events,
         }
 
         res.json({ result: true, user })
@@ -73,7 +73,7 @@ const signin = async (req, res, next) => {
 
         await userData.save()
 
-        res.json({ result: true, user: { first_name: userData.first_name, last_name: userData.last_name, email: userData.email, jwtToken: newJwtToken, role : userData.role, appointments: userData.appointments } })
+        res.json({ result: true, user: { first_name: userData.first_name, last_name: userData.last_name, email: userData.email, jwtToken: newJwtToken, role : userData.role,  events: userData.events,} })
     }
 }
 

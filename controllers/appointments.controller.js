@@ -48,4 +48,36 @@ const appointmentInformations = async (req, res, next) => {
   next();
 }
 
-module.exports = { appointmentInformations }
+
+// SAVE A NEW APPOINTMENT
+const userAppointmentRegistration = async (req, res, next) => {
+  let { user } = req
+  const { appointmentToSave } = req.body
+  const { end, start, employee } = appointmentToSave
+
+  // Safety check that meanwhile another event has not been registered for this hour
+  const blockingEvent = await Event.find({ start: { $lt: end }, end: { $gt: start }, employee })
+  
+  if (blockingEvent.length) {
+    res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
+  }
+  else {
+    const newAppointment = new Event({
+      ...appointmentToSave,
+      client: user._id,
+      createdBy: user._id,
+      expiresAt,
+    })
+
+    const appointmentSaved = await newAppointment.save()
+    await appointmentSaved.populate("appointment_type")
+
+    user.events.push(appointmentSaved._id)
+
+    await user.save()
+
+    res.status(200).json({ result: true, successText: "Rendez-vous enregistré !", appointmentSaved })
+  }
+}
+
+module.exports = { appointmentInformations, userAppointmentRegistration }
