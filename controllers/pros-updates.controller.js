@@ -4,7 +4,7 @@ const AppointmentType = require("../models/appointment-types.model")
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
 
-  const allUsers = await User.find().select('-password -token')
+  const allUsers = await User.find().select('-password -token').lean()
   allUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   res.locals.searchResult = { dataName: "allUsers", data: allUsers }
@@ -38,7 +38,7 @@ const updateUser = async (req, res, next) => {
 
 // GET THE LIST OF ALL THE APPOINTMENT TYPES
 const getAppointmentsTypes = async (req, res, next) => {
-  const appointmentsTypes = await AppointmentType.find()
+  const appointmentsTypes = await AppointmentType.find().lean()
 
   res.json({ result: true, appointmentsTypes })
 }

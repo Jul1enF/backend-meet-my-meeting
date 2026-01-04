@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 const { errorHandler } = require('../utils/errorHandler')
-const { ownerTokenAuth, adminTokenAuth, employeeTokenAuth, userTokenAuth } = require('../middlewares/token-auth.middleware')
+const { userTokenAuth } = require('../middlewares/token-auth.middleware')
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
 const { appointmentInformations, userAppointmentRegistration } = require("../controllers/appointments.controller")

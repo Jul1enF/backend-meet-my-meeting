@@ -15,6 +15,9 @@ const userSchema = mongoose.Schema({
 },
     { timestamps: true })
 
+userSchema.index({ role: 1, createdAt: 1 })
+userSchema.index({ role: 1, last_name: 1 })
+
 
 const User = mongoose.model('users', userSchema)
 

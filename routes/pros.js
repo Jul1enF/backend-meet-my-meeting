@@ -6,6 +6,7 @@ const { ownerTokenAuth, adminTokenAuth, employeeTokenAuth } = require('../middle
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
 const { getAllUsers, updateUser, getAppointmentsTypes, appointmentTypesModification, deleteAppointmentType } = require("../controllers/pros-updates.controller")
+const { scheduleInformations } = require("../controllers/appointments.controller")
 
 
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
@@ -22,5 +23,8 @@ router.put("/appointment-types-modification", ownerTokenAuth, errorHandler(appoi
 
 // DELETE AN APPOINTMENT TYPE
 router.delete("/delete-appointment-type/:_id", ownerTokenAuth, errorHandler(deleteAppointmentType))
+
+// GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM BOOK APPOINTMENTS
+router.get("/schedule-informations", employeeTokenAuth, errorHandler(scheduleInformations), sendIfUpdated)
 
 module.exports = router;

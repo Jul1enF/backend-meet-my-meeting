@@ -27,5 +27,7 @@ eventSchema.index(
     }
 )
 
+eventSchema.index({ start: 1, end: 1 })
+
 const Event = mongoose.model('events', eventSchema)
 module.exports = Event
