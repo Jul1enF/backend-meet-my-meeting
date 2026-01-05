@@ -6,6 +6,7 @@ const eventSchema = mongoose.Schema({
 
     employee: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     client: { type: mongoose.Schema.Types.ObjectId, ref: 'users', default: null },
+    unregistered_client : { type : Object, default : null},
 
     category : { type: String, enum: ['appointment', 'break', 'lunchBreak', 'closure', 'absence'], default: 'appointment' },
 
