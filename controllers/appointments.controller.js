@@ -10,7 +10,7 @@ const expiresAt = new Date(Date.now() + defaultExpirationDate);
 const appointmentGapMs = 1000 * 60 * 15 // 15 minutes
 const maxFuturDays = 15
 const sortFreeEmployees = null
-const rolesPriorities = { owner: 1, admin: 2, employee: 3 }
+const rolesPriorities = { owner: 1, employee: 2 }
 const defaultSchedule = { start : 8, end : 19}
 
 
@@ -18,7 +18,7 @@ const defaultSchedule = { start : 8, end : 19}
 const appointmentInformations = async (req, res, next) => {
 
   // Employees and appointment types
-  const employees = await User.find({ role: { $ne: "client" } }).sort({ createdAt: 1 }).select('-password -token -email -last_name -events').lean()
+  const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -email -last_name -events').lean()
   const appointmentTypes = await AppointmentType.find().lean()
 
   // Events
@@ -89,7 +89,7 @@ const userAppointmentRegistration = async (req, res, next) => {
 const scheduleInformations = async (req, res, next) => {
 
   // Employees, users and appointment types
-  const employees = await User.find({ role: { $ne: "client" } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
+  const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
   const appointmentTypes = await AppointmentType.find().lean()
   const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token -events').lean()
 

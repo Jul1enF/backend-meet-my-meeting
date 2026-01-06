@@ -10,19 +10,19 @@ const { scheduleInformations } = require("../controllers/appointments.controller
 
 
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
-router.get("/get-all-users", ownerTokenAuth, errorHandler(getAllUsers), sendIfUpdated)
+router.get("/get-all-users", adminTokenAuth, errorHandler(getAllUsers), sendIfUpdated)
 
 // UPDATE THE ROLE AND/OR THE SCHEDULE OF A USER
-router.put("/update-user", ownerTokenAuth, errorHandler(updateUser))
+router.put("/update-user", adminTokenAuth, errorHandler(updateUser))
 
 // GET THE LIST OF ALL THE APPOINTMENT TYPES
-router.get("/get-appointments-types", ownerTokenAuth, errorHandler(getAppointmentsTypes))
+router.get("/get-appointments-types", adminTokenAuth, errorHandler(getAppointmentsTypes))
 
 // CREATE OR UPDATE AN APPOINTMENT
-router.put("/appointment-types-modification", ownerTokenAuth, errorHandler(appointmentTypesModification))
+router.put("/appointment-types-modification", adminTokenAuth, errorHandler(appointmentTypesModification))
 
 // DELETE AN APPOINTMENT TYPE
-router.delete("/delete-appointment-type/:_id", ownerTokenAuth, errorHandler(deleteAppointmentType))
+router.delete("/delete-appointment-type/:_id", adminTokenAuth, errorHandler(deleteAppointmentType))
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM BOOK APPOINTMENTS
 router.get("/schedule-informations", employeeTokenAuth, errorHandler(scheduleInformations), sendIfUpdated)
