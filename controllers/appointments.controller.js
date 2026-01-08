@@ -4,14 +4,7 @@ const User = require("../models/users.model")
 
 const { DateTime } = require('luxon')
 
-// Constants to send
-const defaultExpirationDate = 1000 * 60 * 60 * 24 * 30 * 2; // 2 months
-const expiresAt = new Date(Date.now() + defaultExpirationDate);
-const appointmentGapMs = 1000 * 60 * 15 // 15 minutes
-const maxFuturDays = 15
-const sortFreeEmployees = null
-const rolesPriorities = { owner: 1, employee: 2 }
-const defaultSchedule = { start : 8, end : 19}
+const { defaultExpirationDate, expiresAt, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities, defaultSchedule} = require("../constants/eventsContants")
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
@@ -45,7 +38,7 @@ const appointmentInformations = async (req, res, next) => {
     else events.push(e)
   })
 
-  const informations = { employees, appointmentTypes, events, closures, absences, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities, defaultSchedule }
+  const informations = { employees, appointmentTypes, events, closures, absences, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
 
   res.locals.searchResult = { dataName: "informations", data: informations }
   next();
@@ -53,10 +46,10 @@ const appointmentInformations = async (req, res, next) => {
 
 
 // SAVE A NEW APPOINTMENT
-const userAppointmentRegistration = async (req, res, next) => {
+const appointmentRegistration = async (req, res, next) => {
   let { user } = req
-  const { appointmentToSave } = req.body
-  const { end, start, employee } = appointmentToSave
+  const { eventToSave } = req.body
+  const { end, start, employee } = eventToSave
 
   // Safety check that meanwhile another event has not been registered for this hour
   const blockingEvent = await Event.find({ start: { $lt: end }, end: { $gt: start }, employee })
@@ -65,21 +58,21 @@ const userAppointmentRegistration = async (req, res, next) => {
     res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
   }
   else {
-    const newAppointment = new Event({
-      ...appointmentToSave,
+    const newEvent = new Event({
+      ...eventToSave,
       client: user._id,
       createdBy: user._id,
       expiresAt,
     })
 
-    const appointmentSaved = await newAppointment.save()
-    await appointmentSaved.populate("appointment_type")
+    const eventSaved = await newEvent.save()
+    await eventSaved.populate("appointment_type")
 
-    user.events.push(appointmentSaved._id)
+    user.events.push(eventSaved._id)
 
     await user.save()
 
-    res.status(200).json({ result: true, successText: "Rendez-vous enregistré !", appointmentSaved })
+    res.status(200).json({ result: true, successText: "Rendez-vous enregistré !", eventSaved })
   }
 }
 
@@ -123,4 +116,4 @@ const scheduleInformations = async (req, res, next) => {
   next();
 }
 
-module.exports = { appointmentInformations, userAppointmentRegistration, scheduleInformations }
+module.exports = { appointmentInformations, appointmentRegistration, scheduleInformations }

@@ -8,6 +8,7 @@ var logger = require('morgan');
 var usersRouter = require('./routes/users');
 var prosRouter = require('./routes/pros')
 var appointmentsRouter = require('./routes/appointments')
+var eventsRouter = require('./routes/events')
 
 var app = express();
 
@@ -41,5 +42,6 @@ app.use((req, res, next) => {
 app.use('/users', usersRouter);
 app.use('/pros', prosRouter);
 app.use('/appointments', appointmentsRouter)
+app.use('/events', eventsRouter)
 
 module.exports = app;
