@@ -4,7 +4,7 @@ const User = require("../models/users.model")
 
 const { DateTime } = require('luxon')
 
-const { defaultExpirationDate, expiresAt, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities, defaultSchedule} = require("../constants/eventsContants")
+const { defaultExpirationDate, expiresAt, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/eventsContants")
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
@@ -52,9 +52,13 @@ const appointmentRegistration = async (req, res, next) => {
   const { end, start, employee } = eventToSave
 
   // Safety check that meanwhile another event has not been registered for this hour
-  const blockingEvent = await Event.find({ start: { $lt: end }, end: { $gt: start }, employee })
+  const blockingEvents = await Event.find({ start: { $lt: end }, end: { $gt: start }, 
+    $or: [
+    { employee },
+    { category: "closure" }
+  ] })
 
-  if (blockingEvent.length) {
+  if (blockingEvents.length) {
     res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
   }
   else {
@@ -77,43 +81,4 @@ const appointmentRegistration = async (req, res, next) => {
 }
 
 
-
-// GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM BOOK APPOINTMENTS
-const scheduleInformations = async (req, res, next) => {
-
-  // Employees, users and appointment types
-  const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
-  const appointmentTypes = await AppointmentType.find().lean()
-  const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token -events').lean()
-
-  // Events
-  const dbEvents = await Event.find({ end: { $gt: new Date() } })
-    .sort({ start: 1 })
-    .populate([
-      { path: "appointment_type" },
-      { path: "client" }
-    ])
-    .lean()
-
-  const closures = []
-  const absences = []
-  const events = []
-
-  dbEvents.forEach(e => {
-    if (e.category === "closure") {
-      closures.push(e)
-      return
-    } else if (e.category === "absence") {
-      absences.push(e)
-      return
-    }
-    else events.push(e)
-  })
-
-  const informations = { employees, appointmentTypes, users, events, closures, absences, appointmentGapMs, defaultSchedule }
-
-  res.locals.searchResult = { dataName: "informations", data: informations }
-  next();
-}
-
-module.exports = { appointmentInformations, appointmentRegistration, scheduleInformations }
+module.exports = { appointmentInformations, appointmentRegistration  }
