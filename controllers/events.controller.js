@@ -126,4 +126,14 @@ const eventRegistration = async (req, res, next) => {
 }
 
 
-module.exports = { scheduleInformations, eventRegistration }
+// DELETE AN EVENT
+const deleteEvent = async (req, res, next) => {
+    const {_id} = req.params
+    const data = await Event.deleteOne({_id})
+
+    if (data?.deletedCount === 1) res.json({result : true, successText : "Évènement supprimé !"})
+    else res.json({result : false, errorText : "Erreur : Problème de connexion avec la base de donnée"})
+}
+
+
+module.exports = { scheduleInformations, eventRegistration, deleteEvent }

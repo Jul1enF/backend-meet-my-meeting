@@ -1,5 +1,5 @@
 // Constants to use
-const defaultExpirationDate = 1000 * 60 * 60 * 24 * 30 * 2; // 2 months
+const defaultExpirationDate = 1000 * 60 * 60 * 24 * 30 * 1; // 1 months
 const expiresAt = new Date(Date.now() + defaultExpirationDate);
 
 // Constants to send

@@ -4,7 +4,7 @@ var router = express.Router();
 const { errorHandler } = require('../utils/errorHandler')
 const { ownerTokenAuth, adminTokenAuth, employeeTokenAuth } = require('../middlewares/token-auth.middleware')
 
-const { scheduleInformations, eventRegistration } = require('../controllers/events.controller')
+const { scheduleInformations, eventRegistration, deleteEvent } = require('../controllers/events.controller')
 
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
@@ -14,6 +14,9 @@ router.get("/schedule-informations", employeeTokenAuth, errorHandler(scheduleInf
 
 // SAVE A NEW EVENT
 router.post("/event-registration", employeeTokenAuth, errorHandler(eventRegistration))
+
+// DELETE AN EVENT
+router.delete("/delete-event/:_id", employeeTokenAuth, errorHandler(deleteEvent))
 
 
 
