@@ -7,6 +7,8 @@ const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultS
 const { getBlockingEvents } = require('../utils/getBlockingEvents')
 
 
+
+
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM REGISTER EVENTS
 const scheduleInformations = async (req, res, next) => {
 
@@ -47,131 +49,13 @@ const scheduleInformations = async (req, res, next) => {
 
 
 
-// SAVE A NEW EVENT
-const eventRegistration = async (req, res, next) => {
-    let { user } = req // The employe saving the event
-
-    const { eventToSave } = req.body
-    const { end, start, employee, category, client } = eventToSave
-
-    const closure = category === "closure"
-    const absence = category === "absence"
-
-    // Safety check that it is not an employee posting a closure event
-    if (closure && user.role === "employee") {
-        return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster une fermeture" })
-    }
-
-    // Safety check that it is not an employee posting an absence or break for another employee
-    if (
-        (absence || category === "break")
-        && user.role === "employee"
-        && employee.toString() !== user._id.toString()
-    ) {
-
-        return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster cette absence" })
-    }
-
-
-    // Safety check that meanwhile another event has not been registered for this time slot
-    const blockingEvents = await getBlockingEvents(end, start, category, employee)
-
-    const errorText = (closure || absence) ? "Erreur : Un ou plusieurs RDV présent(s) dans ce créneau" : "Erreur : le créneau n'est plus disponible !"
-
-    if (blockingEvents.length) {
-        return res.json({ result: false, errorText })
-    }
-
-    const expiration = category === "appointment" ? { expiresAt: getAppointmentExpiration() } : { expiresAt: getEventExpiration() }
-
-    const newEvent = new Event({
-        ...eventToSave,
-        createdBy: user._id,
-        ...expiration,
-    })
-
-    const eventSaved = await newEvent.save()
-    await eventSaved.populate([
-        { path: "appointment_type" },
-        { path: "client" }
-    ])
-
-    if (category === "appointment" && client?._id) {
-        await User.findByIdAndUpdate(
-            client._id,
-            { $addToSet: { events: eventSaved._id } }
-        )
-    }
-
-    res.status(200).json({ result: true, successText: "Évènement enregistré !", eventSaved })
-
-}
-
-
-// DELETE AN EVENT
-const deleteEvent = async (req, res, next) => {
-    const { _id } = req.params
-    const data = await Event.deleteOne({ _id })
-
-    if (data?.deletedCount === 1) res.json({ result: true, successText: "Évènement supprimé !" })
-    else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
-}
-
-
-
-// MODIFY THE LUNCH BREAK OF AN EMPLOYEE FOR A SPECIFIC DAY
-const modifyLunchBreak = async (req, res, next) => {
-    let { user } = req // The employe saving the event
-
-    const { eventToSave } = req.body
-    const { end, start, employee, category, _id } = eventToSave
-
-    // Safety check that it is not an employee posting a lunch break for another employee
-    if (user.role === "employee" && employee.toString() !== user._id.toString()) {
-
-        return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster cette absence" })
-    }
-
-    // Safety check that meanwhile another event has not been registered for this time slot
-    const blockingEvents = await getBlockingEvents(end, start, category, employee, _id ?? null)
-
-    if (blockingEvents.length) {
-        return res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
-    }
-
-    let updatedLunchBreak
-
-    // If there is no _id it's a new event that need to be saved
-    if (!_id) {
-        updatedLunchBreak = new Event({
-            ...eventToSave,
-            createdBy: user._id,
-            expiresAt: getEventExpiration(),
-        })
-    }
-    // Otherwise we have to modify an existing document
-    else {
-        updatedLunchBreak = await Event.findById(_id)
-
-        Object.assign(updatedLunchBreak, {
-            ...eventToSave,
-            updatedBy: user._id,
-        })
-    }
-
-    const eventSaved = await updatedLunchBreak.save()
-
-    res.status(200).json({ result: true, successText: "Pause déjeuner modifiée !", eventSaved })
-}
-
-
 
 // CREATE OR UPDATE AN EVENT
 const createOrUpdate = async (req, res, next) => {
     let { user } = req // The employe saving the event
 
     const { eventToSave } = req.body
-    const { end, start, employee, category, client, _id } = eventToSave
+    const { end, start, employee, category, _id } = eventToSave
 
     const isAppointment = category === "appointment"
     const isClosure = category === "closure"
@@ -245,14 +129,14 @@ const createOrUpdate = async (req, res, next) => {
             { path: "client" }
         ])
 
-
         if (previousClientId && previousClientId !== newClientId) {
             await User.findByIdAndUpdate(
                 previousClientId,
                 { $pull: { events: eventSaved._id } }
             )
         }
-        else if (newClientId && previousClientId !== newClientId) {
+        if (newClientId && previousClientId !== newClientId) {
+            console.log("HERE !!!")
             await User.findByIdAndUpdate(
                 newClientId,
                 { $addToSet: { events: eventSaved._id } }
@@ -267,4 +151,17 @@ const createOrUpdate = async (req, res, next) => {
 }
 
 
-module.exports = { scheduleInformations, eventRegistration, deleteEvent, modifyLunchBreak }
+
+
+// DELETE AN EVENT
+const deleteEvent = async (req, res, next) => {
+    const { _id } = req.params
+    const data = await Event.deleteOne({ _id })
+
+    if (data?.deletedCount === 1) res.json({ result: true, successText: "Évènement supprimé !" })
+    else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
+}
+
+
+
+module.exports = { scheduleInformations, createOrUpdate, deleteEvent }

@@ -18,11 +18,12 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
         blockingQuery.category = "appointment"
         blockingQuery.employee = employee
     } else {
-        // for other events categories we search for everything that could block the employee
+        // for other events categories we search for everything that could block the employee (except suppressed default lunch break wich are events)
         blockingQuery.$or = [
             { employee },
             { category: "closure" }
         ]
+        blockingQuery.lunch_break_modification = { $ne : "suppression"}
     }
     const blockingEvents = await Event.find(blockingQuery)
 
