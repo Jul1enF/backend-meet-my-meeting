@@ -16,6 +16,9 @@ const eventSchema = mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
 
+    // If it is a modified lunch break, field to know the type of the modification :
+    lunch_break_modification :{ type: String, enum: ['update', 'suppression'] },
+
     expiresAt: Date,
 },
     { timestamps: true })

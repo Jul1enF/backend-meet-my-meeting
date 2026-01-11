@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 // IN THE SCHEDULE OBJECT : 0 = MONDAY
 
+// An employee can't :
+// - access users list and modify their status
+// - access appointments types list and modify it
+// - create closure events
+// - create a break or absence event for someone else
+
 const userSchema = mongoose.Schema({
     first_name: String,
     last_name: String,

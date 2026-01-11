@@ -4,7 +4,7 @@ const User = require("../models/users.model")
 
 const { DateTime } = require('luxon')
 
-const { defaultExpirationDate, expiresAt, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/eventsContants")
+const { appointmentExpiration, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/eventsContants")
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
@@ -59,14 +59,14 @@ const appointmentRegistration = async (req, res, next) => {
   ] })
 
   if (blockingEvents.length) {
-    res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
+    return res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
   }
   else {
     const newEvent = new Event({
       ...eventToSave,
       client: user._id,
       createdBy: user._id,
-      expiresAt,
+      expiresAt : appointmentExpiration,
     })
 
     const eventSaved = await newEvent.save()

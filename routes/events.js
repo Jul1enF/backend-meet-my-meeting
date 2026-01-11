@@ -4,7 +4,7 @@ var router = express.Router();
 const { errorHandler } = require('../utils/errorHandler')
 const { ownerTokenAuth, adminTokenAuth, employeeTokenAuth } = require('../middlewares/token-auth.middleware')
 
-const { scheduleInformations, eventRegistration, deleteEvent } = require('../controllers/events.controller')
+const { scheduleInformations, eventRegistration, deleteEvent, modifyLunchBreak } = require('../controllers/events.controller')
 
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
@@ -17,6 +17,9 @@ router.post("/event-registration", employeeTokenAuth, errorHandler(eventRegistra
 
 // DELETE AN EVENT
 router.delete("/delete-event/:_id", employeeTokenAuth, errorHandler(deleteEvent))
+
+// MODIFY THE LUNCH BREAK OF AN EMPLOYEE FOR A SPECIFIC DAY
+router.put("/modify-lunch-break", employeeTokenAuth, errorHandler(modifyLunchBreak))
 
 
 
