@@ -11,7 +11,7 @@ const { getBlockingEvents } = require('../utils/getBlockingEvents')
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM REGISTER EVENTS
 const scheduleInformations = async (req, res, next) => {
-
+   
     // Employees, users and appointment types
     const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
     const appointmentTypes = await AppointmentType.find().lean()
@@ -136,7 +136,6 @@ const createOrUpdate = async (req, res, next) => {
             )
         }
         if (newClientId && previousClientId !== newClientId) {
-            console.log("HERE !!!")
             await User.findByIdAndUpdate(
                 newClientId,
                 { $addToSet: { events: eventSaved._id } }
@@ -155,7 +154,16 @@ const createOrUpdate = async (req, res, next) => {
 
 // DELETE AN EVENT
 const deleteEvent = async (req, res, next) => {
-    const { _id } = req.params
+    const { _id, clientId } = req.params
+   
+    // If there is an _id for a client affiliated to that event
+    if (clientId){
+        await User.findByIdAndUpdate(
+            clientId,
+            { $pull: { events: _id } }
+        )
+    }
+
     const data = await Event.deleteOne({ _id })
 
     if (data?.deletedCount === 1) res.json({ result: true, successText: "Évènement supprimé !" })
@@ -165,3 +173,33 @@ const deleteEvent = async (req, res, next) => {
 
 
 module.exports = { scheduleInformations, createOrUpdate, deleteEvent }
+
+
+
+
+
+
+
+
+
+// Function to clean events that were suppressed in db without suppressing them in the client events array
+//  const allUsers = await User.find()
+//     let suppressedEventCount = 0
+//     let totalEventCount = 0
+//     for (let user of allUsers){
+//         const eventsToSuppress = []
+//         if (user.events?.length){
+//             totalEventCount += user.events.length
+//             for (let event of user.events){
+//                 const eventFound = await Event.findById(event)
+//                 if (!eventFound){
+//                     suppressedEventCount +=1
+//                     eventsToSuppress.push(event.toString())
+//                 }
+//             }
+//         }
+//         user.events = [...user.events].filter(e => !eventsToSuppress.includes(e.toString()))
+//         await user.save()
+//     }
+//     console.log("suppressedEventCount :", suppressedEventCount)
+//     console.log("totalEventCount :", totalEventCount)
