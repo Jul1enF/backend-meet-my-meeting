@@ -4,18 +4,14 @@ const bcrypt = require('bcrypt')
 // UPDATE USER INFORMATIONS
 const updateUser = async (req, res, next) => {
 
-    const { name, firstname, email, oldPassword, password } = req.body;
+    const { updatedUser, oldPassword, password } = req.body;
 
     let { user } = req;
-
-    user.name = name;
-    user.firstname = firstname;
-    user.email = email;
 
     // Password comparison if an old one is provided
 
     if (oldPassword && !bcrypt.compareSync(oldPassword, user.password)) {
-        res.json({ result: false, errorText: "Ancien mot de passe incorrect !" })
+        res.json({ result: false, errorText: "Erreur : Ancien mot de passe incorrect !" })
         return
     }
 
@@ -24,9 +20,12 @@ const updateUser = async (req, res, next) => {
         user.password = hash
     }
 
-    await user.save();
+    Object.assign(user, updatedUser)
 
-    res.json({ result: true })
+    const userData = await user.save();
+    const { first_name, last_name, email } = userData
+
+    res.json({ result: true, userSaved : { first_name, last_name, email }, successText : "Modifications enregistrées avec succès !" })
 }
 
 module.exports = { updateUser }
