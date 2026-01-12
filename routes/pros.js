@@ -20,7 +20,7 @@ router.get("/get-appointments-types", adminTokenAuth, errorHandler(getAppointmen
 // CREATE OR UPDATE AN APPOINTMENT TYPE
 router.put("/appointment-types-modification", adminTokenAuth, errorHandler(appointmentTypesModification))
 
-// DELETE AN APPOINTMENT TYPE
-router.delete("/delete-appointment-type/:_id", adminTokenAuth, errorHandler(deleteAppointmentType))
+// DELETE AN APPOINTMENT TYPE (BY PUTING TO IT AN EXPIRATION DATE)
+router.put("/delete-appointment-type", adminTokenAuth, errorHandler(deleteAppointmentType))
 
 module.exports = router;

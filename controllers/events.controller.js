@@ -2,19 +2,21 @@ const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
 const User = require("../models/users.model")
 
-const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultSchedule } = require("../constants/eventsContants")
+const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultSchedule } = require("../constants/documentConstants")
 
-const { getBlockingEvents } = require('../utils/getBlockingEvents')
+const { getBlockingEvents, isAppointmentTypeDeleted } = require('../utils/safetyChecks')
 
 
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE DAYS SCHEDULE OF EMPLOYEES AND LET THEM REGISTER EVENTS
 const scheduleInformations = async (req, res, next) => {
-   
+
     // Employees, users and appointment types
     const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
-    const appointmentTypes = await AppointmentType.find().lean()
+
+    const appointmentTypes = await AppointmentType.find({ expiresAt: { $exists: false } }).lean()
+    
     const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token -events').lean()
 
     // Events
@@ -55,13 +57,14 @@ const createOrUpdate = async (req, res, next) => {
     let { user } = req // The employe saving the event
 
     const { eventToSave } = req.body
-    const { end, start, employee, category, _id } = eventToSave
+    const { end, start, employee, category, _id, appointment_type } = eventToSave
 
     const isAppointment = category === "appointment"
     const isClosure = category === "closure"
     const isAbsence = category === "absence"
     const isUpdate = Boolean(_id)
 
+    // SAFETY CHECKS
     // Safety check that it is not an employee posting a closure event
     if (isClosure && user.role === "employee") {
         return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster une fermeture" })
@@ -77,7 +80,6 @@ const createOrUpdate = async (req, res, next) => {
         return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster cette absence" })
     }
 
-
     // Safety check that meanwhile another event has not been registered for this time slot
     const blockingEvents = await getBlockingEvents(end, start, category, employee, isUpdate ? _id : null)
 
@@ -87,12 +89,20 @@ const createOrUpdate = async (req, res, next) => {
         return res.json({ result: false, errorText })
     }
 
+    // Safety check that meanwhile the appointment type has not been suppressed (marked with an expiresAt)
+    const appointmentTypeDeleted = await isAppointmentTypeDeleted(appointment_type)
 
+    if (appointmentTypeDeleted) {
+        return res.json({ result: false, errorText: "Erreur : Ce type de rdv vient d'être supprimé !", appointmentTypeError : true })
+    }
+
+
+    // Futur doc to save
     let formattedEventToSave
     // Var to register the potential previous client id if it has changed
     let previousClientId
 
-    // Create a new event
+    // CREATE
     if (!isUpdate) {
         const expiration = isAppointment ? { expiresAt: getAppointmentExpiration() } : { expiresAt: getEventExpiration() }
 
@@ -102,7 +112,7 @@ const createOrUpdate = async (req, res, next) => {
             ...expiration,
         })
     }
-    // Update of an event
+    // UPDATE
     else {
         formattedEventToSave = await Event.findById(_id)
 
@@ -119,28 +129,32 @@ const createOrUpdate = async (req, res, next) => {
         })
     }
 
+    // SAVE
     const eventSaved = await formattedEventToSave.save()
+
 
     // The potential actual id of the client of the event
     const newClientId = eventSaved.client?.toString()
 
-        await eventSaved.populate([
-            { path: "appointment_type" },
-            { path: "client" }
-        ])
+    await eventSaved.populate([
+        { path: "appointment_type" },
+        { path: "client" }
+    ])
 
-        if (previousClientId && previousClientId !== newClientId) {
-            await User.findByIdAndUpdate(
-                previousClientId,
-                { $pull: { events: eventSaved._id } }
-            )
-        }
-        if (newClientId && previousClientId !== newClientId) {
-            await User.findByIdAndUpdate(
-                newClientId,
-                { $addToSet: { events: eventSaved._id } }
-            )
-        }
+    // If there were client id that is not the same anymore, we suppressed on the client document
+    if (previousClientId && previousClientId !== newClientId) {
+        await User.findByIdAndUpdate(
+            previousClientId,
+            { $pull: { events: eventSaved._id } }
+        )
+    }
+    // If there is a new client id we insert it in the client document
+    if (newClientId && previousClientId !== newClientId) {
+        await User.findByIdAndUpdate(
+            newClientId,
+            { $addToSet: { events: eventSaved._id } }
+        )
+    }
 
 
     const successText = !isUpdate ? "Évènement enregistré !" : category === "lunchBreak" ? "Pause déjeuner modifiée !" : "Évènement modifié !"
@@ -155,9 +169,9 @@ const createOrUpdate = async (req, res, next) => {
 // DELETE AN EVENT
 const deleteEvent = async (req, res, next) => {
     const { _id, clientId } = req.params
-   
+
     // If there is an _id for a client affiliated to that event
-    if (clientId){
+    if (clientId) {
         await User.findByIdAndUpdate(
             clientId,
             { $pull: { events: _id } }

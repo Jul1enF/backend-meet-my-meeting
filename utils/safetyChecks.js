@@ -1,4 +1,5 @@
 const Event = require("../models/events.model")
+const AppointmentType = require("../models/appointment-types.model")
 
 const getBlockingEvents = async (end, start, category, employee, excludeEventId = null) => {
 
@@ -30,4 +31,18 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
     return blockingEvents
 }
 
-module.exports = { getBlockingEvents }
+
+const isAppointmentTypeDeleted = async (_id) => {
+
+if (!_id) return false
+
+const selectedAppointmentType = await AppointmentType.findById(_id)
+
+if (!selectedAppointmentType || selectedAppointmentType.expiresAt){
+    return true
+}else{
+    return false
+}
+}
+
+module.exports = { getBlockingEvents, isAppointmentTypeDeleted }

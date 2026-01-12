@@ -5,8 +5,19 @@ const appointmentTypeSchema = mongoose.Schema({
     title: String,  // "woman hair color appointment"
     default_duration: Number,
     price : Number,
+
+    expiresAt : Date,
 }, 
 { timestamps: true })
+
+
+appointmentTypeSchema.index(
+    { expiresAt: 1 },
+    { 
+        expireAfterSeconds: 0, 
+        partialFilterExpression: { expiresAt: { $exists: true } }
+    }
+)
 
 const AppointmentType = mongoose.model('appointment_types', appointmentTypeSchema)
 

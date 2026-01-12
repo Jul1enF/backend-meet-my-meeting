@@ -1,6 +1,8 @@
 const User = require("../models/users.model")
 const AppointmentType = require("../models/appointment-types.model")
 
+const { getAppointmentTypeExpiration } = require("../constants/documentConstants")
+
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
 
@@ -38,7 +40,7 @@ const updateUser = async (req, res, next) => {
 
 // GET THE LIST OF ALL THE APPOINTMENT TYPES
 const getAppointmentsTypes = async (req, res, next) => {
-  const appointmentsTypes = await AppointmentType.find().lean()
+  const appointmentsTypes = await AppointmentType.find({ expiresAt: { $exists: false } }).lean()
 
   res.json({ result: true, appointmentsTypes })
 }
@@ -48,7 +50,7 @@ const appointmentTypesModification = async (req, res, next) => {
   const { appointmentTypeToSave, newAppointmentType, _id } = req.body
   let appointmentTypeSaved
 
-  // Create
+  // Update
   if (!newAppointmentType) {
     appointmentTypeSaved = await AppointmentType.findByIdAndUpdate(
       _id,
@@ -59,6 +61,7 @@ const appointmentTypesModification = async (req, res, next) => {
       }
     )
   }
+  // Create
   else {
     const newAppointmentType = new AppointmentType(appointmentTypeToSave)
     appointmentTypeSaved = await newAppointmentType.save()
@@ -73,14 +76,15 @@ const appointmentTypesModification = async (req, res, next) => {
 }
 
 
-// DELETE AN APPOINTMENT TYPE
+// DELETE AN APPOINTMENT TYPE (BY PUTING TO IT AN EXPIRATION DATE)
 const deleteAppointmentType = async (req, res, next) => {
-  const { _id } = req.params
-  const result = await AppointmentType.deleteOne({_id})
-  if (!result.deletedCount === 1){
-    return res.status(404).json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée." })
-  }
-  else return res.json({ result : true })
+  const { _id } = req.body
+  
+  await AppointmentType.findByIdAndUpdate(
+    _id,
+    { expiresAt : getAppointmentTypeExpiration() }
+  )
+  return res.json({ result : true, successText : "Modèle supprimé !" })
 }
 
 
