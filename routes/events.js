@@ -16,7 +16,7 @@ router.get("/schedule-informations", employeeTokenAuth, errorHandler(scheduleInf
 router.put("/create-or-update", employeeTokenAuth, errorHandler(createOrUpdate))
 
 // DELETE AN EVENT
-router.delete("/delete-event/:_id{/:clientId}", employeeTokenAuth, errorHandler(deleteEvent))
+router.delete("/delete-event/:_id", employeeTokenAuth, errorHandler(deleteEvent))
 
 
 module.exports = router;

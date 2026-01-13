@@ -77,10 +77,6 @@ const appointmentRegistration = async (req, res, next) => {
   const eventSaved = await newEvent.save()
   await eventSaved.populate("appointment_type")
 
-  user.events.push(eventSaved._id)
-
-  await user.save()
-
   res.status(200).json({ result: true, successText: "Rendez-vous enregistré !", eventSaved })
 
 }

@@ -5,6 +5,7 @@ const User = require("../models/users.model")
 const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultSchedule } = require("../constants/documentConstants")
 
 const { getBlockingEvents, isAppointmentTypeDeleted } = require('../utils/safetyChecks')
+const { DateTime } = require("luxon");
 
 
 
@@ -19,8 +20,8 @@ const scheduleInformations = async (req, res, next) => {
     
     const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token -events').lean()
 
-    // Events
-    const dbEvents = await Event.find({ end: { $gt: new Date() } })
+    // Events starting from the begining of the day (to display past event in the employee schedule)
+    const dbEvents = await Event.find({ end: { $gt: DateTime.now({ zone: "Europe/Paris" }).startOf("day").toUTC().toJSDate() } })
         .sort({ start: 1 })
         .populate([
             { path: "appointment_type" },
@@ -99,8 +100,6 @@ const createOrUpdate = async (req, res, next) => {
 
     // Futur doc to save
     let formattedEventToSave
-    // Var to register the potential previous client id if it has changed
-    let previousClientId
 
     // CREATE
     if (!isUpdate) {
@@ -120,9 +119,6 @@ const createOrUpdate = async (req, res, next) => {
             return res.status(404).json({ result: false, errorText: "Erreur : Évènement introuvable en base de donnée" })
         }
 
-        // Registration of a potential previous client id
-        previousClientId = formattedEventToSave.client?.toString()
-
         Object.assign(formattedEventToSave, {
             ...eventToSave,
             updatedBy: user._id,
@@ -132,31 +128,12 @@ const createOrUpdate = async (req, res, next) => {
     // SAVE
     const eventSaved = await formattedEventToSave.save()
 
-
-    // The potential actual id of the client of the event
-    const newClientId = eventSaved.client?.toString()
-
     await eventSaved.populate([
         { path: "appointment_type" },
         { path: "client" }
     ])
 
-    // If there were client id that is not the same anymore, we suppressed on the client document
-    if (previousClientId && previousClientId !== newClientId) {
-        await User.findByIdAndUpdate(
-            previousClientId,
-            { $pull: { events: eventSaved._id } }
-        )
-    }
-    // If there is a new client id we insert it in the client document
-    if (newClientId && previousClientId !== newClientId) {
-        await User.findByIdAndUpdate(
-            newClientId,
-            { $addToSet: { events: eventSaved._id } }
-        )
-    }
-
-
+    
     const successText = !isUpdate ? "Évènement enregistré !" : category === "lunchBreak" ? "Pause déjeuner modifiée !" : "Évènement modifié !"
 
     res.status(200).json({ result: true, successText, eventSaved })
@@ -168,15 +145,7 @@ const createOrUpdate = async (req, res, next) => {
 
 // DELETE AN EVENT
 const deleteEvent = async (req, res, next) => {
-    const { _id, clientId } = req.params
-
-    // If there is an _id for a client affiliated to that event
-    if (clientId) {
-        await User.findByIdAndUpdate(
-            clientId,
-            { $pull: { events: _id } }
-        )
-    }
+    const { _id } = req.params
 
     const data = await Event.deleteOne({ _id })
 
@@ -187,33 +156,3 @@ const deleteEvent = async (req, res, next) => {
 
 
 module.exports = { scheduleInformations, createOrUpdate, deleteEvent }
-
-
-
-
-
-
-
-
-
-// Function to clean events that were suppressed in db without suppressing them in the client events array
-//  const allUsers = await User.find()
-//     let suppressedEventCount = 0
-//     let totalEventCount = 0
-//     for (let user of allUsers){
-//         const eventsToSuppress = []
-//         if (user.events?.length){
-//             totalEventCount += user.events.length
-//             for (let event of user.events){
-//                 const eventFound = await Event.findById(event)
-//                 if (!eventFound){
-//                     suppressedEventCount +=1
-//                     eventsToSuppress.push(event.toString())
-//                 }
-//             }
-//         }
-//         user.events = [...user.events].filter(e => !eventsToSuppress.includes(e.toString()))
-//         await user.save()
-//     }
-//     console.log("suppressedEventCount :", suppressedEventCount)
-//     console.log("totalEventCount :", totalEventCount)
