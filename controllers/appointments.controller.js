@@ -82,4 +82,19 @@ const appointmentRegistration = async (req, res, next) => {
 }
 
 
-module.exports = { appointmentInformations, appointmentRegistration }
+
+// GET ALL THE APPOINTMENT OF A USER
+const userAppointments = async (req, res, next) => {
+  const { _id } = req.user
+
+  const appointments = await Event.find({category : "appointment", end : { $gt : new Date()}, client : _id })
+  .populate('appointment_type')
+  .lean()
+
+  res.locals.searchResult = { dataName: "appointments", data: appointments }
+
+  next();
+}
+
+
+module.exports = { appointmentInformations, appointmentRegistration, userAppointments }
