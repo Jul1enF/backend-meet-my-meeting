@@ -6,7 +6,7 @@ const { DateTime } = require('luxon')
 
 const { appointmentExpiration, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/documentConstants")
 
-const { getBlockingEvents, isAppointmentTypeDeleted } = require("../utils/safetyChecks")
+const { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking } = require("../utils/safetyChecks")
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
@@ -17,7 +17,7 @@ const appointmentInformations = async (req, res, next) => {
     role: { $in: ["owner", "employee"] }, $or: [
       { contract_end: { $exists: false } },
       { contract_end: null },
-      { contract_end: { $gt: now } }
+      { contract_end: { $gt: new Date() } }
     ]
   }).sort({ createdAt: 1 }).select('-password -token -email -last_name').lean()
   const appointmentTypes = await AppointmentType.find({ expiresAt: { $exists: false } }).lean()
@@ -56,17 +56,32 @@ const appointmentInformations = async (req, res, next) => {
 
 
 
-// SAVE A NEW APPOINTMENT
-const appointmentRegistration = async (req, res, next) => {
+// CREATE OR UPDATE AN APPOINTMENT COMING FROM AN USER
+const userAppointmentSaving = async (req, res, next) => {
   let { user } = req
   const { eventToSave } = req.body
-  const { end, start, employee, category, appointment_type } = eventToSave
+  const { end, start, employee, category, appointment_type, client, _id } = eventToSave
 
+  const isUpdate = Boolean(_id)
+
+
+  // SAFETY CHECKS
   // Safety check that meanwhile another event has not been registered for this time slot
-  const blockingEvents = await getBlockingEvents(end, start, category, employee)
+  const blockingEvents = await getBlockingEvents(end, start, category, employee, isUpdate ? _id : null)
 
   if (blockingEvents.length) {
     return res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
+  }
+
+  // Safety check that the user is updating an appointment for himself
+  if (isUpdate && client.toString() !== user._id.toString()) {
+    return res.json({ result: false, errorText: "Erreur : utilisateur modifiant un rdv ne lui appartenant pas !" })
+  }
+
+  // Safety check that the selected employee is still working (his contract didn"t end)
+  const employeeStillWorking = await isEmployeeStillWorking(end, employee)
+  if (!employeeStillWorking) {
+    return res.json({ result: false, errorText: "Erreur : le professionel choisi ne travaille plus à cette date là" })
   }
 
   // Safety check that meanwhile the appointment type has not been suppressed (marked with an expiresAt)
@@ -76,14 +91,29 @@ const appointmentRegistration = async (req, res, next) => {
     return res.json({ result: false, errorText: "Erreur : Ce type de rdv vient d'être supprimé !", appointmentTypeError: true })
   }
 
-  const newEvent = new Event({
-    ...eventToSave,
-    client: user._id,
-    createdBy: user._id,
-    expiresAt: appointmentExpiration,
-  })
 
-  const eventSaved = await newEvent.save()
+  let eventSaved
+
+  // CREATE
+  if (!isUpdate) {
+    const newEvent = new Event({
+      ...eventToSave,
+      client: user._id,
+      createdBy: user._id,
+      expiresAt: appointmentExpiration,
+    })
+
+    eventSaved = await newEvent.save()
+  }
+  // UPDATE
+  else{
+    eventSaved = await Event.findByIdAndUpdate(
+      _id,
+      { $set : eventToSave},
+      { new : true, runValidators : true }
+    )
+  }
+
   await eventSaved.populate("appointment_type")
 
   res.status(200).json({ result: true, successText: "Rendez-vous enregistré !", eventSaved })
@@ -92,93 +122,5 @@ const appointmentRegistration = async (req, res, next) => {
 
 
 
-// UPDATE A USER APPOINTMENT
-const updateUserAppointment = async (req, res, next) => {
-    let { user } = req // The employe saving the event
 
-    const { eventToSave } = req.body
-    const { end, start, employee, category, _id, appointment_type } = eventToSave
-
-    const isAppointment = category === "appointment"
-    const isClosure = category === "closure"
-    const isAbsence = category === "absence"
-    const isUpdate = Boolean(_id)
-
-    // SAFETY CHECKS
-    // Safety check that it is not an employee posting a closure event
-    if (isClosure && user.role === "employee") {
-        return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster une fermeture" })
-    }
-
-    // Safety check that it is not an employee posting an absence, break or LunchBreak for another employee
-    if (
-        (isAbsence || category === "break" || category === "lunchBreak")
-        && user.role === "employee"
-        && employee.toString() !== user._id.toString()
-    ) {
-
-        return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster cette absence" })
-    }
-
-    // Safety check that meanwhile another event has not been registered for this time slot
-    const blockingEvents = await getBlockingEvents(end, start, category, employee, isUpdate ? _id : null)
-
-    const errorText = (isClosure || isAbsence) ? "Erreur : Un ou plusieurs RDV présent(s) dans ce créneau" : "Erreur : le créneau n'est plus disponible !"
-
-    if (blockingEvents.length) {
-        return res.json({ result: false, errorText })
-    }
-
-    // Safety check that meanwhile the appointment type has not been suppressed (marked with an expiresAt)
-    const appointmentTypeDeleted = await isAppointmentTypeDeleted(appointment_type)
-
-    if (appointmentTypeDeleted) {
-        return res.json({ result: false, errorText: "Erreur : Ce type de rdv vient d'être supprimé !", appointmentTypeError: true })
-    }
-
-
-    // Futur doc to save
-    let formattedEventToSave
-
-    // CREATE
-    if (!isUpdate) {
-        const expiration = isAppointment ? { expiresAt: getAppointmentExpiration() } : { expiresAt: getEventExpiration() }
-
-        formattedEventToSave = new Event({
-            ...eventToSave,
-            createdBy: user._id,
-            ...expiration,
-        })
-    }
-    // UPDATE
-    else {
-        formattedEventToSave = await Event.findById(_id)
-
-        if (!formattedEventToSave) {
-            return res.status(404).json({ result: false, errorText: "Erreur : Évènement introuvable en base de donnée" })
-        }
-
-        Object.assign(formattedEventToSave, {
-            ...eventToSave,
-            updatedBy: user._id,
-        })
-    }
-
-    // SAVE
-    const eventSaved = await formattedEventToSave.save()
-
-    await eventSaved.populate([
-        { path: "appointment_type" },
-        { path: "client" }
-    ])
-
-
-    const successText = !isUpdate ? "Évènement enregistré !" : category === "lunchBreak" ? "Pause déjeuner modifiée !" : "Évènement modifié !"
-
-    res.status(200).json({ result: true, successText, eventSaved })
-
-}
-
-
-
-module.exports = { appointmentInformations, appointmentRegistration, updateUserAppointment }
+module.exports = { appointmentInformations, userAppointmentSaving }

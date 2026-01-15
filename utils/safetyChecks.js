@@ -1,5 +1,6 @@
 const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
+const User = require("../models/users.model")
 
 const getBlockingEvents = async (end, start, category, employee, excludeEventId = null) => {
 
@@ -24,7 +25,7 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
             { employee },
             { category: "closure" }
         ]
-        blockingQuery.lunch_break_modification = { $ne : "suppression"}
+        blockingQuery.lunch_break_modification = { $ne: "suppression" }
     }
     const blockingEvents = await Event.find(blockingQuery)
 
@@ -34,15 +35,26 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
 
 const isAppointmentTypeDeleted = async (_id) => {
 
-if (!_id) return false
+    if (!_id) return false
 
-const selectedAppointmentType = await AppointmentType.findById(_id)
+    const selectedAppointmentType = await AppointmentType.findById(_id)
 
-if (!selectedAppointmentType || selectedAppointmentType.expiresAt){
-    return true
-}else{
-    return false
+    if (!selectedAppointmentType || selectedAppointmentType.expiresAt) {
+        return true
+    } else {
+        return false
+    }
 }
+
+
+const isEmployeeStillWorking = async (appointmentEnd, employeeId) => {
+    const employee = await User.findById(employeeId).select("contract_end").lean()
+
+    if (!employee) return false
+
+    if (!employee.contract_end) return true
+
+    return new Date(employee.contract_end) > new Date(appointmentEnd)
 }
 
-module.exports = { getBlockingEvents, isAppointmentTypeDeleted }
+module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking }

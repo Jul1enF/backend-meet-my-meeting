@@ -4,7 +4,7 @@ const User = require("../models/users.model")
 
 const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultSchedule } = require("../constants/documentConstants")
 
-const { getBlockingEvents, isAppointmentTypeDeleted } = require('../utils/safetyChecks')
+const { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking } = require('../utils/safetyChecks')
 const { DateTime } = require("luxon");
 
 
@@ -18,7 +18,7 @@ const scheduleInformations = async (req, res, next) => {
         role: { $in: ["owner", "employee"] }, $or: [
             { contract_end: { $exists: false } },
             { contract_end: null },
-            { contract_end: { $gt: now } }
+            { contract_end: { $gt: new Date() } }
         ]
     }).sort({ createdAt: 1 }).select('-password -token').lean()
 
@@ -85,6 +85,14 @@ const createOrUpdate = async (req, res, next) => {
     ) {
 
         return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster cette absence" })
+    }
+
+    // Safety check that the selected employee is still working (his contract didn't end)
+    if (employee) {
+        const employeeStillWorking = await isEmployeeStillWorking(end, employee)
+        if (!employeeStillWorking) {
+            return res.json({ result: false, errorText: "Erreur : le professionel choisi ne travaille plus à cette date là" })
+        }
     }
 
     // Safety check that meanwhile another event has not been registered for this time slot
