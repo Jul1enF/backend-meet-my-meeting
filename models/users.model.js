@@ -20,7 +20,7 @@ const userSchema = mongoose.Schema({
 },
     { timestamps: true })
 
-userSchema.index({ role: 1, createdAt: 1 })
+userSchema.index({ role: 1, contract_end: 1, createdAt: 1 })
 userSchema.index({ role: 1, last_name: 1 })
 
 

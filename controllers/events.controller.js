@@ -14,11 +14,17 @@ const { DateTime } = require("luxon");
 const scheduleInformations = async (req, res, next) => {
 
     // Employees, users and appointment types
-    const employees = await User.find({ role: { $in: ["owner", "employee"] } }).sort({ createdAt: 1 }).select('-password -token -events').lean()
+    const employees = await User.find({
+        role: { $in: ["owner", "employee"] }, $or: [
+            { contract_end: { $exists: false } },
+            { contract_end: null },
+            { contract_end: { $gt: now } }
+        ]
+    }).sort({ createdAt: 1 }).select('-password -token').lean()
 
     const appointmentTypes = await AppointmentType.find({ expiresAt: { $exists: false } }).lean()
-    
-    const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token -events').lean()
+
+    const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token').lean()
 
     // Events starting from the begining of the day (to display past event in the employee schedule)
     const dbEvents = await Event.find({ end: { $gt: DateTime.now({ zone: "Europe/Paris" }).startOf("day").toUTC().toJSDate() } })
@@ -94,7 +100,7 @@ const createOrUpdate = async (req, res, next) => {
     const appointmentTypeDeleted = await isAppointmentTypeDeleted(appointment_type)
 
     if (appointmentTypeDeleted) {
-        return res.json({ result: false, errorText: "Erreur : Ce type de rdv vient d'être supprimé !", appointmentTypeError : true })
+        return res.json({ result: false, errorText: "Erreur : Ce type de rdv vient d'être supprimé !", appointmentTypeError: true })
     }
 
 
@@ -133,7 +139,7 @@ const createOrUpdate = async (req, res, next) => {
         { path: "client" }
     ])
 
-    
+
     const successText = !isUpdate ? "Évènement enregistré !" : category === "lunchBreak" ? "Pause déjeuner modifiée !" : "Évènement modifié !"
 
     res.status(200).json({ result: true, successText, eventSaved })
