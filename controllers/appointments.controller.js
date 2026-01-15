@@ -122,5 +122,16 @@ const userAppointmentSaving = async (req, res, next) => {
 
 
 
+// USER DELETE AN APPOINTMENT
+const deleteAppointment = async (req, res, next) => {
+    const { _id } = req.params
 
-module.exports = { appointmentInformations, userAppointmentSaving }
+    const data = await Event.deleteOne({ _id })
+
+    if (data?.deletedCount === 1) res.json({ result: true, successText: "RDV supprimé !" })
+    else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
+}
+
+
+
+module.exports = { appointmentInformations, userAppointmentSaving, deleteAppointment }

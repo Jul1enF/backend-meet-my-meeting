@@ -5,7 +5,7 @@ const { errorHandler } = require('../utils/errorHandler')
 const { userTokenAuth } = require('../middlewares/token-auth.middleware')
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
-const { appointmentInformations, userAppointmentSaving } = require("../controllers/appointments.controller")
+const { appointmentInformations, userAppointmentSaving, deleteAppointment } = require("../controllers/appointments.controller")
 
 
 // GET INFORMATIONS REQUIRED TO ESTABLISH THE FREE SCHEDULE SLOT
@@ -16,5 +16,8 @@ router.get("/user-appointment-informations", userTokenAuth, errorHandler(appoint
 
 // CREATE OR UPDATE AN APPOINTMENT COMING FROM AN USER
 router.put("/user-appointment-saving", userTokenAuth, errorHandler(userAppointmentSaving))
+
+// USER DELETE AN APPOINTMENT
+router.delete("/delete-appointment/:_id", userTokenAuth, errorHandler(deleteAppointment))
 
 module.exports = router;
