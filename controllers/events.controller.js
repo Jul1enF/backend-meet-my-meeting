@@ -50,7 +50,9 @@ const scheduleInformations = async (req, res, next) => {
         else events.push(e)
     })
 
-    const informations = { employees, appointmentTypes, users, events, closures, absences, appointmentGapMs, defaultSchedule }
+    const constants = { appointmentGapMs, defaultSchedule }
+
+    const informations = { employees, appointmentTypes, users, events, closures, absences, constants }
 
     res.locals.searchResult = { dataName: "informations", data: informations }
     next();

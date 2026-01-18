@@ -46,7 +46,9 @@ const appointmentInformations = async (req, res, next) => {
     else events.push(e)
   })
 
-  const informations = { employees, appointmentTypes, events, closures, absences, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
+  const constants = {appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities}
+
+  const informations = { employees, appointmentTypes, events, closures, absences, constants }
 
   res.locals.searchResult = { dataName: "informations", data: informations }
   next();
