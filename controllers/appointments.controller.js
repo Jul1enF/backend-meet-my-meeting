@@ -34,6 +34,7 @@ const appointmentInformations = async (req, res, next) => {
   const closures = []
   const absences = []
   const events = []
+  const workingOverrides = []
 
   dbEvents.forEach(e => {
     if (e.category === "closure") {
@@ -43,12 +44,16 @@ const appointmentInformations = async (req, res, next) => {
       absences.push(e)
       return
     }
+    else if (e.category === "workingOverride") {
+      workingOverrides.push(e)
+      return
+    }
     else events.push(e)
   })
 
-  const constants = {appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities}
+  const constants = { appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
 
-  const informations = { employees, appointmentTypes, events, closures, absences, constants }
+  const informations = { employees, appointmentTypes, events, closures, absences, workingOverrides, constants }
 
   res.locals.searchResult = { dataName: "informations", data: informations }
   next();
@@ -108,11 +113,11 @@ const userAppointmentSaving = async (req, res, next) => {
     eventSaved = await newEvent.save()
   }
   // UPDATE
-  else{
+  else {
     eventSaved = await Event.findByIdAndUpdate(
       _id,
-      { $set : eventToSave},
-      { new : true, runValidators : true }
+      { $set: eventToSave },
+      { new: true, runValidators: true }
     )
   }
 
@@ -126,12 +131,12 @@ const userAppointmentSaving = async (req, res, next) => {
 
 // USER DELETE AN APPOINTMENT
 const deleteAppointment = async (req, res, next) => {
-    const { _id } = req.params
+  const { _id } = req.params
 
-    const data = await Event.deleteOne({ _id })
+  const data = await Event.deleteOne({ _id })
 
-    if (data?.deletedCount === 1) res.json({ result: true, successText: "RDV supprimé !" })
-    else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
+  if (data?.deletedCount === 1) res.json({ result: true, successText: "RDV supprimé !" })
+  else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
 }
 
 

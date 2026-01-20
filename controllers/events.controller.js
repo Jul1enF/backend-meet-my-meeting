@@ -38,6 +38,7 @@ const scheduleInformations = async (req, res, next) => {
     const closures = []
     const absences = []
     const events = []
+    const workingOverrides = []
 
     dbEvents.forEach(e => {
         if (e.category === "closure") {
@@ -46,13 +47,16 @@ const scheduleInformations = async (req, res, next) => {
         } else if (e.category === "absence") {
             absences.push(e)
             return
+        } else if (e.category === "workingOverride") {
+            workingOverrides.push(e)
+            return
         }
         else events.push(e)
     })
 
     const constants = { appointmentGapMs, defaultSchedule }
 
-    const informations = { employees, appointmentTypes, users, events, closures, absences, constants }
+    const informations = { employees, appointmentTypes, users, events, closures, absences, workingOverrides, constants }
 
     res.locals.searchResult = { dataName: "informations", data: informations }
     next();
