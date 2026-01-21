@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 // - access appointments types list and modify it
 // - create closure events
 // - create a break or absence event for someone else
+// - create a workingOverride for another person
 
 const userSchema = mongoose.Schema({
     first_name: String,

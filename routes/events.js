@@ -6,7 +6,7 @@ const { ownerTokenAuth, adminTokenAuth, employeeTokenAuth } = require('../middle
 
 const { scheduleInformations, createOrUpdate, deleteEvent, } = require('../controllers/events.controller')
 
-const { workingOverrideSaving } = require("../controllers/working-override.controller")
+const { workingOverrideSaving, deleteWorkingOverride } = require("../controllers/working-override.controller")
 
 const { sendIfUpdated } = require("../middlewares/send-if-updated.middleware")
 
@@ -23,5 +23,7 @@ router.delete("/delete-event/:_id", employeeTokenAuth, errorHandler(deleteEvent)
 // CREATE OR UPDATE A WORKING OVERRIDE
 router.put("/working-override-saving", employeeTokenAuth, errorHandler(workingOverrideSaving))
 
+// DELETE A WORKING OVERRIDE
+router.delete("/delete-working-override/:eventId/:employeeId", employeeTokenAuth, errorHandler(deleteWorkingOverride))
 
 module.exports = router;
