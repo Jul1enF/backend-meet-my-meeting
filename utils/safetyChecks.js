@@ -21,11 +21,11 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
         blockingQuery.category = "appointment"
         blockingQuery.employee = employee
     } else {
-        // for other events categories we search for everything that could block the employee (except suppressed default lunch break wich are events)
+        // for other events categories we search for everything that could block the employee
 
         // blocking categories
         blockingQuery.category = {
-            $in: ["appointment", "break", "lunchBreak", "absence", "closure"]
+            $in: ["appointment", "break", "absence", "closure"]
         }
 
         // Either the employee is concerned by the event or it is a closure (that concern every employees)
@@ -34,8 +34,6 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
             { category: "closure" }
         ]
 
-        // Don't take in consideration a suppressed lunch break, wich is just a marker
-        blockingQuery.lunch_break_modification = { $ne: "suppression" }
     }
     const blockingEvents = await Event.find(blockingQuery)
 
@@ -106,51 +104,19 @@ const hasNewScheduleConflict = async ({ start, end, employee, lunchBreak }) => {
 
     // CATEGORY QUERY
     const categoryQuery = {
-        category: { $in: ["appointment", "break", "lunchBreak"] }
+        category: { $in: ["appointment", "break"] }
     }
 
-
-    // POTENTIAL UPDATED LUNCH BREAK QUERY
-    const updatedLunchBreakQuery = {
-        $or: [
-            { lunch_break_modification: "update" },
-            { lunch_break_modification: { $exists: false } }
-        ]
-    }
 
     // SEARCH OF BLOCKING EVENTS WITH THE QUERIES
     const blockingEvents = await Event.find({
         employee,
         ...categoryQuery,
-        $and: [
-            {
-                ...updatedLunchBreakQuery
-            },
-            {
-                ...dateQuery
-            }
-        ],
+        ...dateQuery
     })
 
-    if (!blockingEvents.length) return false
 
-
-    // REMOVE POTENTIAL NON-BLOCKING UPDATED LUNCHBREAK
-    const blockingLunchBreak = blockingEvents.find(e => e.category === "lunchBreak")
-
-    let cleanedBlockingEvents
-
-    // If a lunch break fits within the new schedule, it doesn't matters if it overlaps the new default one
-    const lunchBreakFitsSchedule =
-        new Date(blockingLunchBreak?.start) >= jsStart &&
-        new Date(blockingLunchBreak?.end) <= jsEnd
-
-    if (blockingLunchBreak && lunchBreakFitsSchedule) {
-        cleanedBlockingEvents = [...blockingEvents].filter(e => e._id.toString() !== blockingLunchBreak._id.toString())
-    }
-    else cleanedBlockingEvents = [...blockingEvents]
-
-    return cleanedBlockingEvents.length > 0
+    return blockingEvents.length > 0
 }
 
 module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking, hasNewScheduleConflict }

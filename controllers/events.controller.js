@@ -83,9 +83,9 @@ const createOrUpdate = async (req, res, next) => {
         return res.json({ result: false, errorText: "Erreur : utilisateur non autorisé à poster une fermeture" })
     }
 
-    // Safety check that it is not an employee posting an absence, break or LunchBreak for another employee
+    // Safety check that it is not an employee posting an absence or break for another employee
     if (
-        (isAbsence || category === "break" || category === "lunchBreak")
+        (isAbsence || category === "break")
         && user.role === "employee"
         && employee.toString() !== user._id.toString()
     ) {
@@ -154,7 +154,7 @@ const createOrUpdate = async (req, res, next) => {
     ])
 
 
-    const successText = !isUpdate ? "Évènement enregistré !" : category === "lunchBreak" ? "Pause déjeuner modifiée !" : "Évènement modifié !"
+    const successText = !isUpdate ? "Évènement enregistré !" : "Évènement modifié !"
 
     res.status(200).json({ result: true, successText, eventSaved })
 
