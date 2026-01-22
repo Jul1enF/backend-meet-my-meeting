@@ -3,9 +3,10 @@ const User = require("../models/users.model")
 
 const { getEventExpiration } = require("../constants/documentConstants")
 
-const { hasNewScheduleConflict } = require('../utils/safetyChecks')
+const { hasNewScheduleConflict, hasEmployeeDayAppointments } = require('../utils/safetyChecks')
 
 const { DateTime } = require("luxon")
+const { jsDateFromStringTime } = require("../utils/timeFunctions")
 
 
 // CREATE OR UPDATE A WORKING OVERRIDE
@@ -70,6 +71,7 @@ const workingOverrideSaving = async (req, res, next) => {
 }
 
 
+
 // DELETE A WORKING OVERRIDE
 const deleteWorkingOverride = async (req, res, next) => {
     const { user } = req // The employe deleting the event
@@ -92,22 +94,34 @@ const deleteWorkingOverride = async (req, res, next) => {
     }
 
     // Safety check that there is no appointment at all register on that day if it was originally a dayOff or else that presents appointments fits the employee default schedule
+    const concernedDay = DateTime.fromJSDate(eventToDelete.start, { zone: "Europe/Paris" })
+    const dayIndex = concernedDay.weekday - 1
 
-    const dayIndex = DateTime.fromJSDate(eventToDelete.start, { zone: "Europe/Paris" }).weekday - 1
-
-    const concernedEmployee = userDeletingForHimself ? { ...user } : await User.findById(employeeId)
-
+    const concernedEmployee = userDeletingForHimself ? user : await User.findById(employeeId)
+    
     const formerWorkedDay = concernedEmployee.schedule[dayIndex].enabled ? concernedEmployee.schedule[dayIndex] : false
 
-    if (formerWorkedDay) {
-        const {start, end, break : lunchBreak} = formerWorkedDay
-        const newScheduleConflict = await hasNewScheduleConflict({start, end, employee : concernedEmployee._id, lunchBreak })
-
-        if (newScheduleConflict) {
+    if (!formerWorkedDay){
+        const appointmentOnUpdatedDay = await hasEmployeeDayAppointments(concernedDay, concernedEmployee._id)
+        if (appointmentOnUpdatedDay){
+            console.log("appointmentOnUpdatedDay :", appointmentOnUpdatedDay)
             return res.json({ result: false, errorText: "Erreur : Un ou plusieurs RDV empêchent ce changement !" })
         }
     }
+    else {
+        const { start, end, break : lunchBreak } = formerWorkedDay
 
+        const newScheduleConflict = await hasNewScheduleConflict({start : jsDateFromStringTime(start, concernedDay), end : jsDateFromStringTime(end, concernedDay), employee : concernedEmployee._id, lunchBreak })
+
+        if (newScheduleConflict) {
+            return res.json({ result: false, errorText: "Erreur : Un ou plusieurs évènements empêchent ce changement !" })
+        }
+    }
+
+    const data = await Event.deleteOne({ _id : eventId })
+
+    if (data?.deletedCount === 1) res.json({ result: true, successText: "Modifications de la journée supprimés !" })
+    else res.json({ result: false, errorText: "Erreur : Problème de connexion avec la base de donnée" })
 
 }
 

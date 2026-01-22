@@ -1,6 +1,7 @@
 const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
 const User = require("../models/users.model")
+const { jsDateFromStringTime, getJsParisStartOfDay, getJsParisEndOfDay } = require("../utils/timeFunctions")
 const { DateTime } = require("luxon")
 
 const getBlockingEvents = async (end, start, category, employee, excludeEventId = null) => {
@@ -23,22 +24,22 @@ const getBlockingEvents = async (end, start, category, employee, excludeEventId 
     } else {
         // for other events categories we search for everything that could block the employee
 
-        // blocking categories
-        blockingQuery.category = {
-            $in: ["appointment", "break", "absence", "closure"]
-        }
-
         // Either the employee is concerned by the event or it is a closure (that concern every employees)
         blockingQuery.$or = [
-            { employee },
-            { category: "closure" }
+            {
+                employee,
+                category: { $in: ["appointment", "break", "absence"] }
+            },
+            {
+                category: "closure"
+            }
         ]
 
     }
-    const blockingEvents = await Event.find(blockingQuery)
-
-    return blockingEvents
+    return await Event.exists(blockingQuery)
 }
+
+
 
 
 const isAppointmentTypeDeleted = async (_id) => {
@@ -55,6 +56,8 @@ const isAppointmentTypeDeleted = async (_id) => {
 }
 
 
+
+
 const isEmployeeStillWorking = async (appointmentEnd, employeeId) => {
     const employee = await User.findById(employeeId).select("contract_end").lean()
 
@@ -66,6 +69,8 @@ const isEmployeeStillWorking = async (appointmentEnd, employeeId) => {
 }
 
 
+
+
 const hasNewScheduleConflict = async ({ start, end, employee, lunchBreak }) => {
 
     // DATE QUERY
@@ -73,12 +78,12 @@ const hasNewScheduleConflict = async ({ start, end, employee, lunchBreak }) => {
     const jsStart = new Date(start)
     const jsEnd = new Date(end)
 
-    // DateTime representing the start of the concerned day in Paris time
-    const dtParisStartOfDay = DateTime.fromJSDate(jsStart, { zone: "Europe/Paris" }).startOf("day")
+    // DateTime representing the concerned day in Paris time
+    const parisDtDay = DateTime.fromJSDate(jsStart, { zone: "Europe/Paris" })
 
     // JS Dates of the beginning and end of the day in Paris time
-    const jsParisStartOfDay = dtParisStartOfDay.toUTC().toJSDate()
-    const jsParisEndOfDay = DateTime.fromJSDate(jsStart, { zone: "Europe/Paris" }).endOf("day").toUTC().toJSDate()
+    const jsParisStartOfDay = getJsParisStartOfDay(jsStart)
+    const jsParisEndOfDay = getJsParisEndOfDay(jsStart)
 
     // Search for events overlapping before or after the new schedule boundaries
     const dateQuery = {
@@ -90,11 +95,10 @@ const hasNewScheduleConflict = async ({ start, end, employee, lunchBreak }) => {
 
     // Search for events overlapping the lunch break of the new schedule (if enabled)
     if (lunchBreak?.enabled) {
-        const setSameDay = (dtA, dtB) => dtA.set({ year: dtB.year, month: dtB.month, day: dtB.day })
 
-        const jsStartOfBreak = setSameDay(DateTime.fromFormat(lunchBreak.start, "HH:mm"), dtParisStartOfDay).toUTC().toJSDate()
+        const jsStartOfBreak = jsDateFromStringTime(lunchBreak.start, parisDtDay)
 
-        const jsEndOfBreak = setSameDay(DateTime.fromFormat(lunchBreak.end, "HH:mm"), dtParisStartOfDay).toUTC().toJSDate()
+        const jsEndOfBreak = jsDateFromStringTime(lunchBreak.end, parisDtDay)
 
         dateQuery.$or.push(
             { start: { $lt: jsEndOfBreak }, end: { $gt: jsStartOfBreak } }
@@ -103,20 +107,35 @@ const hasNewScheduleConflict = async ({ start, end, employee, lunchBreak }) => {
 
 
     // CATEGORY QUERY
+    // In the front, it's impossible to create/update/delete a workingOverride if there is already on this day a closure or an absence. So we don't look for them.
     const categoryQuery = {
         category: { $in: ["appointment", "break"] }
     }
 
 
     // SEARCH OF BLOCKING EVENTS WITH THE QUERIES
-    const blockingEvents = await Event.find({
+    return await Event.exists({
         employee,
         ...categoryQuery,
         ...dateQuery
     })
-
-
-    return blockingEvents.length > 0
 }
 
-module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking, hasNewScheduleConflict }
+
+
+const hasEmployeeDayAppointments = async (dtDay, employee) => {
+
+    const jsParisStartOfDay = getJsParisStartOfDay(dtDay)
+    const jsParisEndOfDay = getJsParisEndOfDay(dtDay)
+
+    return await Event.exists({
+        employee,
+        category: "appointment",
+        start: { $lt: jsParisEndOfDay },
+        end:   { $gt: jsParisStartOfDay },
+    })
+}
+
+
+
+module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking, hasNewScheduleConflict, hasEmployeeDayAppointments }

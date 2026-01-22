@@ -106,7 +106,7 @@ const createOrUpdate = async (req, res, next) => {
 
     const errorText = (isClosure || isAbsence) ? "Erreur : Un ou plusieurs RDV présent(s) dans ce créneau" : "Erreur : le créneau n'est plus disponible !"
 
-    if (blockingEvents.length) {
+    if (blockingEvents) {
         return res.json({ result: false, errorText })
     }
 

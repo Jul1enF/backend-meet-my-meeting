@@ -76,7 +76,7 @@ const userAppointmentSaving = async (req, res, next) => {
   // Safety check that meanwhile another event has not been registered for this time slot
   const blockingEvents = await getBlockingEvents(end, start, category, employee, isUpdate ? _id : null)
 
-  if (blockingEvents.length) {
+  if (blockingEvents) {
     return res.json({ result: false, errorText: "Erreur : le créneau n'est plus disponible !" })
   }
 
