@@ -4,7 +4,7 @@ const User = require("../models/users.model")
 
 const { DateTime } = require('luxon')
 
-const { appointmentExpiration, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/documentConstants")
+const { appointmentExpiration, slotGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities } = require("../constants/documentConstants")
 
 const { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking } = require("../utils/safetyChecks")
 
@@ -51,7 +51,7 @@ const appointmentInformations = async (req, res, next) => {
     else events.push(e)
   })
 
-  const constants = { appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
+  const constants = { slotGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities }
 
   const informations = { employees, appointmentTypes, events, closures, absences, workingOverrides, constants }
 

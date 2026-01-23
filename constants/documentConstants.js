@@ -18,7 +18,7 @@ const getAppointmentTypeExpiration = () =>
 
 
 // Constants to send
-const appointmentGapMs = 1000 * 60 * 15 // 15 minutes
+const slotGapMs = 1000 * 60 * 15 // 15 minutes
 const sortFreeEmployees = null
 const rolesPriorities = { owner: 1, employee: 2 }
 
@@ -33,4 +33,4 @@ const defaultSchedule = {
   }
 }
 
-module.exports = { getAppointmentExpiration, getEventExpiration, getAppointmentTypeExpiration, appointmentGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities, defaultSchedule }
+module.exports = { getAppointmentExpiration, getEventExpiration, getAppointmentTypeExpiration, slotGapMs, maxFuturDays, sortFreeEmployees, rolesPriorities, defaultSchedule }

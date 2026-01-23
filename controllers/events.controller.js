@@ -2,7 +2,7 @@ const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
 const User = require("../models/users.model")
 
-const { getAppointmentExpiration, getEventExpiration, appointmentGapMs, defaultSchedule } = require("../constants/documentConstants")
+const { getAppointmentExpiration, getEventExpiration, slotGapMs, defaultSchedule } = require("../constants/documentConstants")
 
 const { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking } = require('../utils/safetyChecks')
 const { DateTime } = require("luxon");
@@ -54,7 +54,7 @@ const scheduleInformations = async (req, res, next) => {
         else events.push(e)
     })
 
-    const constants = { appointmentGapMs, defaultSchedule }
+    const constants = { slotGapMs, defaultSchedule }
 
     const informations = { employees, appointmentTypes, users, events, closures, absences, workingOverrides, constants }
 
