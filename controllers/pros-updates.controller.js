@@ -2,6 +2,7 @@ const User = require("../models/users.model")
 const AppointmentType = require("../models/appointment-types.model")
 
 const { getAppointmentTypeExpiration, defaultSchedule } = require("../constants/documentConstants")
+const { hasAppointmentsAfterSelectedDate } = require("../utils/safetyChecks")
 
 // GET THE LIST OF ALL USERS TO POSSIBLY MODIFY THEIR ROLE
 const getAllUsers = async (req, res, next) => {
@@ -9,17 +10,26 @@ const getAllUsers = async (req, res, next) => {
   const allUsers = await User.find().select('-password -token').lean()
   allUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-  const usersInformations = { allUsers, constants : {defaultSchedule}}
+  const usersInformations = { allUsers, constants: { defaultSchedule } }
 
   res.locals.searchResult = { dataName: "usersInformations", data: usersInformations }
   next();
 }
 
 
-// UPDATE THE ROLE AND/OR THE SCHEDULE OF A USER
+// UPDATE THE ROLE AND/OR THE SCHEDULE AND CONTRACT END OF A USER
 
 const updateUser = async (req, res, next) => {
   const { _id, userToSave } = req.body
+
+  if (userToSave.contract_end) {
+    const blockingAppointments = await hasAppointmentsAfterSelectedDate(_id, new Date(userToSave.contract_end))
+
+    if (blockingAppointments) {
+      return res.json({ result: false, errorText: "Erreur : Un ou plusieurs RDV sont programmés en la présence de l'employé après sa fin de contrat." })
+    }
+  }
+
 
   const userSaved = await User.findByIdAndUpdate(
     _id,
@@ -81,12 +91,12 @@ const appointmentTypesModification = async (req, res, next) => {
 // DELETE AN APPOINTMENT TYPE (BY PUTING TO IT AN EXPIRATION DATE)
 const deleteAppointmentType = async (req, res, next) => {
   const { _id } = req.body
-  
+
   await AppointmentType.findByIdAndUpdate(
     _id,
-    { expiresAt : getAppointmentTypeExpiration() }
+    { expiresAt: getAppointmentTypeExpiration() }
   )
-  return res.json({ result : true, successText : "Modèle supprimé !" })
+  return res.json({ result: true, successText: "Modèle supprimé !" })
 }
 
 

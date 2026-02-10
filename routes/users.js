@@ -5,7 +5,7 @@ const { errorHandler } = require('../utils/errorHandler')
 const { userTokenAuth } = require('../middlewares/token-auth.middleware')
 
 const { signin, signup } = require('../controllers/auth.controller')
-const { updateUser } = require ('../controllers/users-modifications.controller')
+const { updateUser, deleteUser } = require ('../controllers/users-modifications.controller')
 
 
 // APP : CHECK THE MINIMUM VERSION REQUIRED
@@ -20,5 +20,8 @@ router.post('/signin', errorHandler(signin));
 
 // UPDATE USER
 router.put('/update-user', userTokenAuth, errorHandler(updateUser))
+
+// DELETE USER
+router.delete('/delete-user', userTokenAuth, errorHandler(deleteUser))
 
 module.exports = router;

@@ -22,7 +22,7 @@ const scheduleInformations = async (req, res, next) => {
         ]
     }).sort({ createdAt: 1 }).select('-password -token').lean()
 
-    const appointmentTypes = await AppointmentType.find({ expiresAt: { $exists: false } }).lean()
+    const appointmentTypes = await AppointmentType.find().lean()
 
     const users = await User.find({ role: { $eq: "client" } }).sort({ last_name: 1 }).select('-password -token').lean()
 

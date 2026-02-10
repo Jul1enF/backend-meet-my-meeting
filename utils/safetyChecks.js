@@ -138,4 +138,14 @@ const hasEmployeeDayAppointments = async (dtDay, employee) => {
 
 
 
-module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking, hasNewScheduleConflict, hasEmployeeDayAppointments }
+const hasAppointmentsAfterSelectedDate = async (employeeId, date) => {
+    return await Event.exists({
+        employee : employeeId,
+        category: "appointment",
+        start: { $gte: date },
+    })
+}
+
+
+
+module.exports = { getBlockingEvents, isAppointmentTypeDeleted, isEmployeeStillWorking, hasNewScheduleConflict, hasEmployeeDayAppointments, hasAppointmentsAfterSelectedDate }
