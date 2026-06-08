@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 const { errorHandler } = require('../utils/errorHandler')
-const { userTokenAuth } = require('../middlewares/token-auth.middleware')
+const { requireUser } = require('../middlewares/token-auth.middleware')
 
 const { signin, signup } = require('../controllers/auth.controller')
 const { updateUser, deleteUser } = require ('../controllers/users-modifications.controller')
@@ -19,9 +19,9 @@ router.post('/signup', errorHandler(signup))
 router.post('/signin', errorHandler(signin));
 
 // UPDATE USER
-router.put('/update-user', userTokenAuth, errorHandler(updateUser))
+router.put('/update-user', requireUser, errorHandler(updateUser))
 
 // DELETE USER
-router.delete('/delete-user', userTokenAuth, errorHandler(deleteUser))
+router.delete('/delete-user', requireUser, errorHandler(deleteUser))
 
 module.exports = router;

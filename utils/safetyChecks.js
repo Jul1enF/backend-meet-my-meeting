@@ -1,7 +1,7 @@
 const Event = require("../models/events.model")
 const AppointmentType = require("../models/appointment-types.model")
 const User = require("../models/users.model")
-const { jsDateFromStringTime, getJsParisStartOfDay, getJsParisEndOfDay } = require("../utils/timeFunctions")
+const { jsDateFromStringTime, getJsParisStartOfDay, getJsParisEndOfDay } = require("./timeFunctions")
 const { DateTime } = require("luxon")
 
 const getBlockingEvents = async (end, start, category, employee, excludeEventId = null) => {
