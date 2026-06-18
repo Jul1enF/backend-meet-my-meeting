@@ -31,7 +31,7 @@ const scheduleInformations = async (req, res, next) => {
         .sort({ start: 1 })
         .populate([
             { path: "appointment_type" },
-            { path: "client" }
+            { path: "client", select: "-password -token" }
         ])
         .lean()
 

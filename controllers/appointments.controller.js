@@ -27,6 +27,7 @@ const appointmentInformations = async (req, res, next) => {
   const maxDate = now.plus({ days: maxFuturDays }).endOf("day").toJSDate()
 
   const dbEvents = await Event.find({ start: { $lt: maxDate }, end: { $gt: new Date() } })
+    .select("-unregistered_client")
     .sort({ start: 1 })
     .populate("appointment_type")
     .lean()
