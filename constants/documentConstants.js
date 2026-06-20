@@ -19,7 +19,7 @@ const getAppointmentTypeExpiration = () =>
 
 // Constants to send
 const slotGapMs = 1000 * 60 * 15 // 15 minutes
-const sortFreeEmployees = null
+const sortFreeEmployees = null   // null | "role" | "msOfWork" | "eventCount" | "createdAt"
 const rolesPriorities = { owner: 1, employee: 2 }
 
 const defaultSchedule = {

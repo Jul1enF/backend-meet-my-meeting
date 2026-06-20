@@ -18,6 +18,20 @@ const updateUser = async (req, res, next) => {
         return
     }
 
+    // If the user changes his email, check that he's not taking an already existing one
+    if (updatedUser.email !== user.email) {
+        const existingUser = await User.findOne({ email : updatedUser.email })
+
+        if (existingUser) {
+            res.json({
+                result: false,
+                errorText: 'Adresse email déjà enregistrée sur un autre compte !'
+            })
+            return
+        }
+
+    }
+
     if (oldPassword && password) {
         const hash = bcrypt.hashSync(password, 10)
         user.password = hash
